@@ -1,0 +1,2 @@
+Face Detector. 
+Will run client side, and detect faces and draw bounding boxes, can be written in CPP x WASM or in regular typescript.

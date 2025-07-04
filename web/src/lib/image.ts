@@ -1,0 +1,1 @@
+// responsible for croping / preprocessing and serializing image from a given frame.
