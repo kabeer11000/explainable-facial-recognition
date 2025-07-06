@@ -3,59 +3,80 @@
 #include <filesystem>
 #include <iostream>
 
+using namespace std;
 using namespace cv;
 using namespace cv::ml;
-using namespace std;
 namespace fs = std::filesystem;
 
+// Function to get image file paths from a folder
 vector<string> getImagesFromFolder(const string& folderPath) {
-vector<string> files;
-for (const auto& entry : fs::directory_iterator(folderPath)) {
-if (entry.is_regular_file()) {
-files.push_back(entry.path().string());
-}
-}
-return files;
+    vector<string> files;
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file()) {
+            files.push_back(entry.path().string());
+        }
+    }
+    return files;
 }
 
 int main() {
-vector<string> positiveFiles = getImagesFromFolder("dataset/positives/");
-vector<string> negativeFiles = getImagesFromFolder("dataset/negatives/");
+    vector<string> positiveFiles;
 
-vector<Mat> images;
-vector<int> labels;
+    // Load positive images from person1 to person11
+    for (int p = 1; p <= 11; ++p) {
+        string folder = "dataset/person" + to_string(p) + "/";
+        auto files = getImagesFromFolder(folder);
+        cout << "Found " << files.size() << " images in " << folder << endl;
+        positiveFiles.insert(positiveFiles.end(), files.begin(), files.end());
+    }
 
-for (const auto& file : positiveFiles) {
-Mat img = imread(file, IMREAD_GRAYSCALE);
-resize(img, img, Size(64, 64));
-images.push_back(img);
-labels.push_back(1);
-}
+    // Load negative images
+    auto negativeFiles = getImagesFromFolder("dataset/negatives/");
+    cout << "Found " << negativeFiles.size() << " negative images." << endl;
 
-for (const auto& file : negativeFiles) {
-Mat img = imread(file, IMREAD_GRAYSCALE);
-resize(img, img, Size(64, 64));
-images.push_back(img);
-labels.push_back(0);
-}
+    // Define HOG Descriptor parameters
+    HOGDescriptor hog(Size(64, 64), Size(16, 16), Size(8, 8), Size(8, 8), 9);
 
-HOGDescriptor hog(Size(64,64), Size(16,16), Size(8,8), Size(8,8), 9);
-Mat trainingData;
+    Mat trainingData;
+    vector<int> labels;
 
-for (const auto& img : images) {
-vector<float> descriptors;
-hog.compute(img, descriptors);
-trainingData.push_back(Mat(descriptors).reshape(1, 1));
-}
+    // Process positive images
+    for (const auto& file : positiveFiles) {
+        Mat img = imread(file, IMREAD_GRAYSCALE);
+        if (img.empty()) continue;
+        resize(img, img, Size(64, 64));
+        vector<float> descriptors;
+        hog.compute(img, descriptors);
+        trainingData.push_back(Mat(descriptors).reshape(1, 1));
+        labels.push_back(+1);
+    }
 
-Mat labelsMat(labels, true);
+    // Process negative images
+    for (const auto& file : negativeFiles) {
+        Mat img = imread(file, IMREAD_GRAYSCALE);
+        if (img.empty()) continue;
+        resize(img, img, Size(64, 64));
+        vector<float> descriptors;
+        hog.compute(img, descriptors);
+        trainingData.push_back(Mat(descriptors).reshape(1, 1));
+        labels.push_back(-1);
+    }
 
-Ptr<SVM> svm = SVM::create();
-svm->setType(SVM::C_SVC);
-svm->setKernel(SVM::LINEAR);
-svm->train(trainingData, ROW_SAMPLE, labelsMat);
-svm->save("face_detector_svm.yml");
+    // Convert labels vector to a Mat
+    Mat labelsMat(labels, true);
 
-cout << "Training completed and model saved!" << endl;
-return 0;
+    // Setup and train the SVM
+    Ptr<SVM> svm = SVM::create();
+    svm->setType(SVM::C_SVC);
+    svm->setKernel(SVM::LINEAR);
+    svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, 1000, 1e-6));
+
+    cout << "Training SVM on " << trainingData.rows << " samples..." << endl;
+    svm->train(trainingData, ROW_SAMPLE, labelsMat);
+
+    // Save trained model
+    svm->save("face_detector_svm.yml");
+    cout << "✅ Training complete! Model saved as face_detector_svm.yml" << endl;
+
+    return 0;
 }

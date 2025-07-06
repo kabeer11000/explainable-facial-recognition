@@ -1,24 +1,30 @@
-#include "hog_detector.h"
+#include "hogdetector.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
+using namespace cv;
+using namespace std;
 
 int main() {
-HOGFaceDetector detector;
-cv::Mat frame = cv::imread("sample.jpg");
+    HOGFaceDetector detector;
 
-if (frame.empty()) {
-std::cerr << "Failed to load image." << std::endl;
-return -1;
+    // Load test image
+    Mat frame = imread("sample.jpg");
+    if (frame.empty()) {
+        cerr << "❌ sample.jpg not found." << endl;
+        return -1;
+    }
+
+    // Detect faces
+    auto boxes = detector.detectFaces(frame);
+
+    // Draw bounding boxes
+    for (const auto& box : boxes) {
+        rectangle(frame, Rect(box.x, box.y, box.width, box.height), Scalar(0, 255, 0), 2);
+    }
+
+    // Display result
+    imshow("HOG Face Detection", frame);
+    waitKey(0);
+    return 0;
 }
 
-auto boxes = detector.detectFaces(frame);
-
-for (const auto& box : boxes) {
-cv::rectangle(frame, cv::Rect(box.x, box.y, box.width, box.height), cv::Scalar(255, 0, 0), 2);
-}
-
-cv::imshow("HOG Face Detection", frame);
-cv::waitKey(0);
-
-return 0;
-}
