@@ -3,11 +3,11 @@
 
 
 Folder Structure:
-`web`: Contains website / client side code.
-`recogniser`: Contains code for the face classifier (Identification Provider / Bigger Model).
-`face-detector`: Written in CPP / JS compiled to web assembly etc provides bounding box creation and other functionality.
-`documentation`: Contains project reports and other related documents.
-`colab`: Colab notebooks and more.
+- `web`: Contains website / client side code.
+- `recogniser`: Contains code for the face classifier (Identification Provider / Bigger Model).
+- `face-detector`: Written in CPP / JS compiled to web assembly etc provides bounding box creation and other functionality.
+- `documentation`: Contains project reports and other related documents.
+- `colab`: Colab notebooks and more.
 
 
 # Coding Conventions
