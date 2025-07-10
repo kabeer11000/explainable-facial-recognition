@@ -1,11 +1,13 @@
 # Xplainable Facial Recognition.
+![image](https://github.com/user-attachments/assets/1421eaa3-41bd-4b9a-a3c4-5999f89788df)
+
 
 Folder Structure:
-`web`: Contains website / client side code.
-`recogniser`: Contains code for the face classifier (Identification Provider / Bigger Model).
-`face-detector`: Written in CPP / JS compiled to web assembly etc provides bounding box creation and other functionality.
-`documentation`: Contains project reports and other related documents.
-`colab`: Colab notebooks and more.
+- `web`: Contains website / client side code.
+- `recogniser`: Contains code for the face classifier (Identification Provider / Bigger Model).
+- `face-detector`: Written in CPP / JS compiled to web assembly etc provides bounding box creation and other functionality.
+- `documentation`: Contains project reports and other related documents.
+- `colab`: Colab notebooks and more.
 
 
 # Coding Conventions
