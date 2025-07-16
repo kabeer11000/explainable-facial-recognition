@@ -1,6 +1,12 @@
 # Xplainable Facial Recognition.
 ![image](https://github.com/user-attachments/assets/1421eaa3-41bd-4b9a-a3c4-5999f89788df)
 
+Downloading face-landmark-data
+````
+!wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 
+!bunzip2 shape_predictor_68_face_landmarks.dat.bz2
+````
+& move to .ignored directory
 
 Folder Structure:
 - `web`: Contains website / client side code.
