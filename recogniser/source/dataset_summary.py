@@ -7,7 +7,7 @@ import numpy as np
 
 # --- 1. Define Dataset Path and Gather Basic Information ---
 # The main directory containing subdirectories for each person.
-data_dir = '/home/kabeer/software/explainable-facial-recognition/.ignored/dataset/Dataset'
+data_dir = "C:\Users\Hp\Downloads\uni stuff\Dataset"
 
 # Each subdirectory in data_dir represents a class (a person).
 # We sort the list of IDs for consistent ordering.

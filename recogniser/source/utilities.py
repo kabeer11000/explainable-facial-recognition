@@ -1,3 +1,4 @@
+# Define Utility functions (Noise estimation, Smoothing, Rotation)
 import cv2
 import numpy as np
 from PIL import Image, ExifTags
@@ -44,7 +45,7 @@ def apply_thresholded_smoothing(image_np: np.ndarray, noise_threshold: float = 1
 
     # Estimate noise level
     noise_level = estimate_noise_level(image_np)
-    
+
     print(f"Smoothen: Estimated noise level: {noise_level:.2f}")
 
     if noise_level > noise_threshold:
@@ -63,7 +64,7 @@ def rotate_pillow_image_from_exif(image: Image):
 
     Args:
         image_path (PIL.Image.Image): Path to the input image.
-        
+
     Returns:
         PIL.Image.Image: The rotated (or original if no rotation needed) PIL Image object.
                          Returns None if the image cannot be opened.

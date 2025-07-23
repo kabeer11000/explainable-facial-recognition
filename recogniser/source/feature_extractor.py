@@ -1,3 +1,4 @@
+# Define the FeatureExtractor class (HOG and LBP)
 from skimage.feature import hog, local_binary_pattern
 from skimage.util import img_as_ubyte
 import numpy as np
@@ -29,7 +30,7 @@ class FeatureExtractor:
         Compute HOG features and return the visualization image.
 
         Returns:
-            tuple[np.ndarray, np.ndarray]: 
+            tuple[np.ndarray, np.ndarray]:
                 - 1D array of HOG features.
                 - 2D array of the HOG visualization image.
         """
@@ -77,7 +78,7 @@ class FeatureExtractor:
         """
         Calculates and concatenates HOG and LBP features.
         Visualizes HOG features.
-        
+
         Returns:
             np.ndarray: Concatenated HOG and LBP features.
         """
@@ -91,7 +92,7 @@ class FeatureExtractor:
             plt.axis('off')
             plt.imshow(hog_image, cmap='gray')
             plt.show()
-            
+
             # Display LBP image visualization
             plt.figure(figsize=(4, 4))
             plt.title("LBP Image")
@@ -101,4 +102,3 @@ class FeatureExtractor:
 
         # Concatenate HOG and LBP features into one vector (feature vector)
         return np.concatenate([hog_features, lbp_features])
-
