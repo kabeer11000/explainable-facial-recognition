@@ -59,21 +59,20 @@ def apply_thresholded_smoothing(image_np: np.ndarray, noise_threshold: float = 7
 
 def rotate_pillow_image_from_exif(image: Image):
     """
-    Loads an image, reads its EXIF Orientation tag, and rotates the image
-    according to the tag. If no EXIF data or Orientation tag, returns original.
+    Reads the EXIF Orientation tag from a PIL Image and rotates the image
+    accordingly. If no EXIF data or Orientation tag, returns original.
 
     Args:
-        image_path (PIL.Image.Image): Path to the input image.
+        image (PIL.Image.Image): The input PIL Image object.
 
     Returns:
         PIL.Image.Image: The rotated (or original if no rotation needed) PIL Image object.
-                         Returns None if the image cannot be opened.
     """
-    img_exif = img.getexif()
+    img_exif = image.getexif()
 
     if img_exif is None:
         print(f"No EXIF data found for Image. Returning original image.")
-        return img
+        return image
 
     orientation = 1 # Default orientation (no rotation)
 
@@ -82,23 +81,21 @@ def rotate_pillow_image_from_exif(image: Image):
         if tag_id in ExifTags.TAGS and ExifTags.TAGS[tag_id] == 'Orientation':
             orientation = value
             break
-        # Also check if the numeric ID for Orientation (0x0112) is directly present
         elif tag_id == 0x0112: # Numeric ID for Orientation tag
             orientation = value
             break
 
     # Apply rotation based on Orientation tag
-    # Source for orientation values: https://www.impulseadventure.com/photo/exif-orientation.html
     if orientation == 3: # Rotate 180 degrees
         print(f"Rotating by 180 degrees (EXIF: {orientation}).")
-        img = img.rotate(180, expand=True)
+        image = image.rotate(180, expand=True)
     elif orientation == 6: # Rotate 90 degrees CW
         print(f"Rotating by 90 degrees CW (EXIF: {orientation}).")
-        img = img.rotate(-90, expand=True) # PIL rotate() is CCW, so -90 for CW
+        image = image.rotate(-90, expand=True) # PIL rotate() is CCW, so -90 for CW
     elif orientation == 8: # Rotate 270 degrees CW (or 90 CCW)
         print(f"Rotating by 270 degrees CW (EXIF: {orientation}).")
-        img = img.rotate(90, expand=True) # PIL rotate() is CCW, so 90 for 270 CW
-    elif orientation != 1: # Handle other less common orientations (2, 4, 5, 7) by applying auto_orient
+        image = image.rotate(90, expand=True) # PIL rotate() is CCW, so 90 for 270 CW
+    elif orientation != 1:
         print(f"Applying auto-orientation for (EXIF: {orientation}).")
 
-    return img
+    return image

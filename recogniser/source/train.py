@@ -8,6 +8,9 @@ from Model import DecisionTreeClassifier
 import joblib
 import numpy as np
 from skimage.transform import resize
+from PIL import Image
+from utilities import rotate_pillow_image_from_exif
+
 
 # Load the trained model
 #clf = joblib.load("decision_tree_model.pkl")
@@ -20,8 +23,10 @@ v1 = initialize_haar_detectors()
 features = []
 labels = []
 
-# os.listdir(DATASET_PATH)
-for person in ['01', '02']:
+for person in os.listdir(DATASET_PATH):
+
+
+#for person in ['01', '02']:
     person_dir = DATASET_PATH / person
     if not person_dir.is_dir():
         continue
@@ -32,11 +37,24 @@ for person in ['01', '02']:
         if image_path.suffix.lower() not in ['.jpg', '.jpeg', '.png']:
             continue
             print(f"Reading image: {image_file}")
-        image = cv2.imread(str(image_path))
+       # image = cv2.imread(str(image_path))
+       # if image is None:
+        #    print(f"Could not read image: {image_file}")
+         #   continue
+        
+   # For person 10 and 11, apply EXIF-based rotation using PIL
+        if person in ['10', '11']:
+            pil_img = Image.open(str(image_path))
+            pil_img = rotate_pillow_image_from_exif(pil_img)
+            image = np.array(pil_img)  # Convert back to NumPy array for OpenCV
+        else:
+            image = cv2.imread(str(image_path))
+
         if image is None:
             print(f"Could not read image: {image_file}")
             continue
-           
+
+        
 
         # 1. Estimate noise level
         noise_level = estimate_noise_level(image)
