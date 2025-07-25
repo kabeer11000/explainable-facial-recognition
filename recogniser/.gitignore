@@ -1,3 +1,5 @@
 decision_tree_model.pkl
 features.pkl
 labels.pkl
+
+**.venv

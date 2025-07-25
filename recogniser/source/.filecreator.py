@@ -21,7 +21,7 @@ features = []
 labels = []
 
 # os.listdir(DATASET_PATH)
-for person in ['01', '02', '03']:
+for person in ['01', '05']:
     person_dir = DATASET_PATH / person
     if not person_dir.is_dir():
         continue
@@ -56,7 +56,8 @@ for person in ['01', '02', '03']:
         cropped_face = smoothed_image[y:y+h, x:x+w]
         print(f"Cropped face for {image_file}")
 
-
+        cv2.imwrite('./cropped-test-color-image-' + person + '-.jpg' , cropped_face)
+        
 
         # Convert cropped face to grayscale
         cropped_face_gray = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2GRAY)
@@ -68,10 +69,10 @@ for person in ['01', '02', '03']:
 
         # Use anti_aliasing to smooth during resize
         cropped_face_gray = resize(cropped_face_gray, fixed_size, anti_aliasing=True)
-        # cv2.imwrite('./cropped-test-image.jpg', (cropped_face_gray * 255).astype(np.uint8))
-        # cv2.imshow('Cropped Face', cropped_face_gray)
-        # cv2.waitKey(0)
-        # break
+        cv2.imwrite('./cropped-test-gray-image-' + person + '-.jpg', (cropped_face_gray * 255).astype(np.uint8))
+        cv2.imshow('Cropped Face', cropped_face_gray)
+        cv2.waitKey(0)
+        break
         # 5. Extract features
         extractor = FeatureExtractor(cropped_face_gray)
         feature_vector = extractor.calculate()
@@ -97,7 +98,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 
 
 print("Training Decision Tree Classifier...")
-clf = DecisionTreeClassifier(max_depth=2, min_samples_leaf=4)
+clf = DecisionTreeClassifier()
 clf.fit(X_train, y_train)
 print("Training complete.")
 

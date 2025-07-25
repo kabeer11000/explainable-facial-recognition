@@ -9,7 +9,7 @@ class DecisionTreeClassifier:
     This provides a simplified interface for fixed-size feature vectors
     and classification of people labels.
     """
-    def __init__(self, max_depth=None, min_samples_split=2, min_samples_leaf=1, criterion='gini', random_state=None):
+    def __init__(self, max_depth=None, min_samples_split=2, min_samples_leaf=1, criterion='gini', random_state=42):
         """
         Initializes the Decision Tree Classifier using scikit-learn's implementation.
 
@@ -84,6 +84,31 @@ class DecisionTreeClassifier:
         predictions = self.label_encoder.inverse_transform(predictions_encoded)
         print("Prediction complete.")
         return predictions
+
+    def predict_proba(self, X):
+        """
+        Predicts class probabilities for new data.
+
+        Args:
+            X (np.ndarray): Feature data to predict, shape (n_samples, n_features).
+
+        Returns:
+            np.ndarray: Predicted probabilities, shape (n_samples, n_classes).
+                        The columns are in the order of the classes known by the encoder.
+        """
+        if self.model is None:
+            raise RuntimeError("Classifier not fitted. Call .fit(X, y) first.")
+        if not isinstance(X, np.ndarray):
+            raise TypeError("X must be a NumPy array.")
+        if X.ndim != 2:
+            raise ValueError("X must be a 2D array (n_samples, n_features).")
+        
+        print(f"Predicting probabilities for {X.shape[0]} samples...")
+        probabilities = self.model.predict_proba(X)
+        print("Probability prediction complete.")
+        return probabilities
+
+
 
 # --- Example Usage ---
 if __name__ == "__main__":
