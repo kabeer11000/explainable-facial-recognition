@@ -84,7 +84,7 @@ class FeatureExtractor:
         """
         hog_features, hog_image = self.HOG()
         lbp_features, lbp_image = self.LBP()
-
+        print(f"HOG features shape: {hog_features.shape}, LBP features shape: {lbp_features.shape}")
         if (visulalize):
             # Display HOG visualization image
             plt.figure(figsize=(4, 4))

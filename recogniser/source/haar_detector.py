@@ -96,5 +96,3 @@ def detect_faces_and_eyes(image_np: np.ndarray, classifier_dict: dict):
 
     return detected_faces_data
 
-if __name__ == "__main__":
-    

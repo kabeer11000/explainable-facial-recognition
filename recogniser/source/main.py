@@ -23,7 +23,7 @@ from utilities import apply_thresholded_smoothing
 # --- Configuration ---
 IMAGE_SIZE = (256, 256)
 # Updated dataset path based on user's request (specific to local environment/Git structure)
-DATASET_PATH = Path('/home/kabeer/software/explainable-facial-recognition/.ignored/dataset/Dataset').resolve()
+DATASET_PATH = Path("C:\\Users\\Hp\\Downloads\\uni stuff\\explainable-facial-recognition\\.ignored\\dataset\\Dataset").resolve()
 MODEL_PATH = 'decision_tree_model.joblib'
 ENCODER_PATH = 'label_encoder.joblib'
 

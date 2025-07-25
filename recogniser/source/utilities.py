@@ -25,7 +25,7 @@ def estimate_noise_level(image_np: np.ndarray) -> float:
     noise_level = laplacian.var()
     return noise_level
 
-def apply_thresholded_smoothing(image_np: np.ndarray, noise_threshold: float = 100.0, smoothing_kernel_size: tuple = (5, 5)) -> np.ndarray:
+def apply_thresholded_smoothing(image_np: np.ndarray, noise_threshold: float = 700.0, smoothing_kernel_size: tuple = (5, 5)) -> np.ndarray:
     """
     Estimates the noise level of an image and applies Gaussian smoothing if it's too noisy.
 
