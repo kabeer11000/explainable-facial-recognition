@@ -27,6 +27,7 @@
     </div>
 
     <video
+    id="feed-video"
       class="feed-video w-full h-full object-cover block"
       title="Your video feed"
       playsinline
@@ -38,6 +39,9 @@
 <script>
   // --- DOM Element References ---
   // We assert the types using 'as HTML...Element' and include '| null'
+
+import { HAARDetectorWrapper } from "@/lib/haar-cascades";
+
   // because querySelector/getElementById can return null if the element isn't found.
   const feedLoading = document.querySelector(".feed-loading") as HTMLDivElement | null;
   const feedError = document.querySelector(".feed-error") as HTMLDivElement | null;
@@ -133,6 +137,8 @@
       });
 
       await playStreamOnVideo(mediaStream, video, feedLoading);
+      const haarDetector = new HAARDetectorWrapper('feed-video', );
+      
     } catch (err: unknown) {
       console.error("getUserMedia error:", err);
 
