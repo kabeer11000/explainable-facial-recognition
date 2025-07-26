@@ -5,8 +5,10 @@ import Menu from "@/components/Menu";
 ---
 
 <Layout>
-	<Menu client:only="react" />
-	<Feed />
+	<div class="group">
+		<Menu client:only="react" />
+		<Feed />
+	</div>
 </Layout>
 <script>
 	// Import your Nanostore atoms

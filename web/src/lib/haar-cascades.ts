@@ -182,6 +182,12 @@ export class HaarDetector {
         lut.delete(); // Release LUT memory
         console.log(`Applied Gamma Correction with gamma: ${gamma}`);
       }
+      // let h = 2; // Denoising parameter for luminescence
+      // let hColor = 10; // Denoising parameter for color components
+      // let templateWindowSize = 7; // Size of the template patch
+      // let searchWindowSize = 21; // Size of the window to search for similar patches
+  
+      // cv.fastNlMeansDenoisingColored(src, src, h, hColor, templateWindowSize, searchWindowSize);
       // --- END IMAGE NORMALIZATION ---
 
       // Detect faces in the grayscale image

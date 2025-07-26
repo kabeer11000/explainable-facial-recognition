@@ -6,7 +6,7 @@ const Menu = () => {
   const {connected, statusMessage} = useStore($ConnectionStatus);
   return (
     <>
-      <div className="flex z-101 top-0 left-0 gap-x-4 w-full absolute px-4 py-2">
+      <div tabIndex={-1} className="flex z-101 bottom-0 right-0 gap-x-4 w-full absolute px-4 py-6 group-focus:opacity-0 md:lg:group-focus:opacity-100 duration-300 transition-opacity">
         <div>
           <div className="mb-4 text-white" style={{ mixBlendMode: "exclusion" }}>
             <p className="text-lg">Explainable Facial Recognition</p>
@@ -14,10 +14,11 @@ const Menu = () => {
               AI-Powered Video Analysis: Live processing of your video for real-time
               object detection and feature extraction.
             </p>
+            <hr className='border-b-none my-4 border-neutral-500'/>
           </div>
         </div>
       </div>
-      <div className="flex z-101 bottom-0 left-0 gap-x-4 text-white w-full absolute px-4 py-2">
+      <div className="flex z-101 bottom-0 left-0 gap-x-4 text-white w-full justify-between absolute px-4 py-2">
         <div>
           <div className="flex items-center justify-start">
             {connected ? (
@@ -44,6 +45,8 @@ const Menu = () => {
 
           </div>
         </div>
+        <div className='gap-x-4 flex justify-end'><a href="https://kabeers.network/research/">About</a><a href="/paper/document.pdf">Paper</a></div>
+
       </div>
     </>
 
