@@ -10,7 +10,10 @@ import numpy as np
 from skimage.transform import resize
 from PIL import Image
 from utilities import rotate_pillow_image_from_exif
+from sklearn.preprocessing import LabelEncoder 
+from sklearn.model_selection import train_test_split
 
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # Load the trained model
 #clf = joblib.load("decision_tree_model.pkl")
@@ -19,6 +22,8 @@ DATASET_PATH = Path("C:\\Users\\Hp\\Downloads\\uni stuff\\explainable-facial-rec
 
 # Initialize Haar detectors
 v1 = initialize_haar_detectors()
+
+
 
 features = []
 labels = []
@@ -105,11 +110,18 @@ joblib.dump(features, 'features.pkl')
 joblib.dump(labels, 'labels.pkl')
 
 print("Features and labels dumped successfully using joblib.")
+le = LabelEncoder()
+labels_encoded = le.fit_transform(labels)
 
-from sklearn.model_selection import train_test_split
+#  Save the label encoder to use it later during prediction
+joblib.dump(le, 'label_encoder.pkl')
+print("LabelEncoder saved as label_encoder.pkl")
 
-# X = features, y = labels
-X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+#  Use encoded labels instead of string labels
+X_train, X_test, y_train, y_test = train_test_split(features, labels_encoded, test_size=0.2, random_state=42)
+
+
+
 
 
 
@@ -120,17 +132,10 @@ print("Training complete.")
 
 y_pred = clf.predict(X_test)
 
-from sklearn.metrics import accuracy_score
-
 print("Accuracy:", accuracy_score(y_test, y_pred))
-
-from sklearn.metrics import confusion_matrix
-
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred, target_names=le.classes_))
 
-from sklearn.metrics import classification_report
-
-print("Classification Report:\n", classification_report(y_test, y_pred))
 
 # 7. Save the trained model
 joblib.dump(clf, "decision_tree_model.pkl")
