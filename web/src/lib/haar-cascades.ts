@@ -9,7 +9,7 @@ declare global {
     OPENCV_READY: boolean;
   }
 }
-
+const temp_canvas = document.getElementById('feed-debug-canvas');
 /**
  * Interface for a detected face, including its bounding box and detected eyes.
  */
@@ -26,6 +26,7 @@ export class HaarDetector {
   private faceCascade: any | null = null; // Stores cv.CascadeClassifier for faces
   private eyeCascade: any | null = null;  // Stores cv.CascadeClassifier for eyes
   private cascadeBasePath: string;        // Base path for the XML cascade files
+  private log: boolean = false;
 
   /**
    * Initializes the HaarDetector with a base path for cascade XML files.
@@ -34,10 +35,11 @@ export class HaarDetector {
    *                        Example: If files are at /public/cascades/haarcascade_frontalface_default.xml,
    *                        use '/cascades/'.
    */
-  constructor(cascadeBasePath: string = '/cascades/') {
+  constructor(cascadeBasePath: string = '/cascades/', log = false) {
     // Ensure the base path ends with a slash for consistent URL construction
     this.cascadeBasePath = cascadeBasePath.endsWith('/') ? cascadeBasePath : cascadeBasePath + '/';
     console.log(`HaarDetector initialized with cascade base path: ${this.cascadeBasePath}`);
+    if (log) this.log = true;
   }
 
   /**
@@ -145,23 +147,21 @@ export class HaarDetector {
    * @returns {DetectedFace[]} An array of detected faces, each containing its rectangle and an array of eye rectangles.
    *                           Returns an empty array if classifiers are not loaded or an error occurs.
    */
-  public detect(source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): DetectedFace[] {
+  public detect(source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, ctx): DetectedFace[] {
     if (!this.faceCascade || !this.eyeCascade) {
       console.error("Haar cascade classifiers are not loaded. Call init() first and await its completion.");
       return [];
     }
 
     // Allocate Mats (OpenCV.js image matrices) for processing
-    let src = new cv.Mat(source.height, source.width, cv.CV_8UC4); // RGBA for HTML elements
+    // Read the image data from the HTML element into 'src' Mat
+    let src = cv.matFromImageData(ctx.getImageData(0, 0, source.width, source.height));
     let gray = new cv.Mat();
     let faces = new cv.RectVector();
     let eyes = new cv.RectVector();
     let detectedFacesData: DetectedFace[] = [];
 
     try {
-      // Read the image data from the HTML element into 'src' Mat
-      cv.imread(source, src);
-
       // Convert to grayscale for detection
       cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
@@ -176,6 +176,12 @@ export class HaarDetector {
         new cv.Size(30, 30), // Minimum possible object size. Objects smaller than that are ignored.
         new cv.Size(src.cols, src.rows) // Maximum possible object size. Objects larger are ignored.
       );
+      if (this.log) console.log('image width: ' + src.cols + '\n' +
+        'image height: ' + src.rows + '\n' +
+        'image size: ' + src.size().width + '*' + src.size().height + '\n' +
+        'image depth: ' + src.depth() + '\n' +
+        'image channels ' + src.channels() + '\n' +
+        'image type: ' + src.type() + '\n');
 
       // Iterate through detected faces
       for (let i = 0; i < faces.size(); ++i) {
@@ -219,7 +225,7 @@ export class HaarDetector {
           },
           eyes: eyesInFace,
         });
-        console.log(detectedFacesData);
+        if (this.log) console.log(detectedFacesData);
         roiGray.delete(); // Release memory for the ROI Mat
       }
     } catch (error) {

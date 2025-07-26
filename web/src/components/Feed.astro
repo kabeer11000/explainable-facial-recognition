@@ -1,36 +1,38 @@
 ---
-// src/components/Feed.astro
-
-import { HaarDetector } from '@/lib/haar-cascades';
-
 interface Props {
   videoSrc?: string;
   cascadePath?: string;
 }
 
-const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
+const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
 ---
 
 <div class="video-container w-full h-screen flex justify-center items-center box-border px-4">
-  <div class="feed-container w-full h-full absolute bg-black rounded-lg overflow-hidden flex justify-center items-center transition-all duration-300 hover:rounded-4xl hover:shadow-xl">
+  <div
+    class="feed-container w-full h-full absolute bg-black rounded-lg overflow-hidden flex justify-center items-center transition-all duration-300 hover:rounded-4xl hover:shadow-xl">
     <noscript>
       <p class="text-white">Please enable JavaScript to view the video feed.</p>
     </noscript>
 
-    <div class="feed-error hidden absolute inset-0 justify-center items-center bg-black/70 text-white text-center z-10">
+    <div
+      class="feed-error hidden absolute inset-0 justify-center items-center bg-black/70 text-white text-center z-10">
       <div class="p-4">
         <p class="error-title text-red-400 font-bold mb-1">Error loading video feed.</p>
         <p class="error-message text-sm" id="error-message"></p>
       </div>
     </div>
 
-    <div class="feed-loading absolute inset-0 flex justify-center items-center bg-black/70 text-white text-center z-10">
+    <div
+      class="feed-loading absolute inset-0 flex justify-center items-center bg-black/70 text-white text-center z-10">
       <p class="loading-message text-white p-1">[Loading video feed...]</p>
     </div>
 
-    <canvas class="feed-overlay absolute inset-0 z-50 bg-transparent pointer-events-none" id="feed-overlay-canvas"></canvas>
+    <canvas
+      class="feed-overlay absolute inset-0 z-50 w-full h-full bg-transparent pointer-events-none"
+      id="feed-overlay-canvas"></canvas>
 
-    <div class="feed-info absolute bottom-4 left-4 bg-black/60 text-white px-4 py-2 rounded-lg text-sm z-20">
+    <div
+      class="feed-info absolute bottom-4 left-4 bg-black/60 text-white px-4 py-2 rounded-lg text-sm z-20">
       <p class="info-text m-0 p-1 text-xs text-neutral-400">Live Feed</p>
     </div>
 
@@ -39,6 +41,7 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
       class="feed-video w-full h-full object-cover block"
       title="Your video feed"
       playsinline
+      crossorigin="anonymous"
       autoplay
       muted></video>
   </div>
@@ -53,29 +56,41 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
     }
   }
 
-  import { HaarDetector } from '@/lib/haar-cascades';
+  import { HaarDetector } from "@/lib/haar-cascades";
 
   let detector: HaarDetector | null = null;
   let animationFrameId: number = 0;
 
   // Get cascade path from data attribute
-  const cascadePath = document.currentScript?.getAttribute('data-cascade-path') || '/cascades/';
+  const cascadePath = document.currentScript?.getAttribute("data-cascade-path") || "/cascades/";
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    const videoElement = document.getElementById('feed-video') as HTMLVideoElement | null;
-    const canvasElement = document.getElementById('feed-overlay-canvas') as HTMLCanvasElement | null;
-    const ctx = canvasElement?.getContext('2d');
+  document.addEventListener("DOMContentLoaded", async () => {
+    const videoElement = document.getElementById("feed-video") as HTMLVideoElement | null;
+    const canvasElement = document.getElementById(
+      "feed-overlay-canvas",
+    ) as HTMLCanvasElement | null;
+    const ctx = canvasElement?.getContext("2d", { willReadFrequently: true });
 
     const feedLoading = document.querySelector(".feed-loading") as HTMLDivElement | null;
     const feedError = document.querySelector(".feed-error") as HTMLDivElement | null;
-    const errorMessageElement = document.getElementById("error-message") as HTMLParagraphElement | null;
+    const errorMessageElement = document.getElementById(
+      "error-message",
+    ) as HTMLParagraphElement | null;
 
-    if (!videoElement || !canvasElement || !ctx || !feedLoading || !feedError || !errorMessageElement) {
+    if (
+      !videoElement ||
+      !canvasElement ||
+      !ctx ||
+      !feedLoading ||
+      !feedError ||
+      !errorMessageElement
+    ) {
       console.error("Required DOM elements not found");
       if (feedError && errorMessageElement) {
         feedLoading?.classList.add("hidden");
         feedError.classList.remove("hidden");
-        errorMessageElement.textContent = "Initialization failed: Essential UI elements are missing.";
+        errorMessageElement.textContent =
+          "Initialization failed: Essential UI elements are missing.";
       }
       return;
     }
@@ -103,13 +118,15 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
             resolve();
           } catch (playError: unknown) {
             console.error("Error playing video:", playError);
-            const errorMessage = playError instanceof DOMException
-              ? `Could not play video: ${playError.message}. This might be due to autoplay policies.`
+            const errorMessage =
+              playError instanceof DOMException ?
+                `Could not play video: ${playError.message}. This might be due to autoplay policies.`
               : "Could not play video. Please check your browser settings.";
             displayError(errorMessage);
             reject(new Error(errorMessage));
           }
         };
+        if (!videoElement) return;
 
         videoElement.onloadedmetadata = handleMetadataLoaded;
         videoElement.onerror = (event: Event | string) => {
@@ -120,7 +137,7 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
 
         if (streamOrSrc instanceof MediaStream) {
           videoElement.srcObject = streamOrSrc;
-        } else if (typeof streamOrSrc === 'string') {
+        } else if (typeof streamOrSrc === "string") {
           videoElement.src = streamOrSrc;
           videoElement.load();
         }
@@ -136,15 +153,15 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
         if (!videoElement.paused && !videoElement.ended && detector && ctx) {
           ctx.drawImage(videoElement, 0, 0, canvasElement!.width, canvasElement!.height);
 
-          const detectedFaces = detector.detect(canvasElement!);
+          const detectedFaces = detector.detect(canvasElement, ctx);
 
-          detectedFaces.forEach(face => {
-            ctx.strokeStyle = 'red';
+          detectedFaces.forEach((face) => {
+            ctx.strokeStyle = "red";
             ctx.lineWidth = 2;
             ctx.strokeRect(face.rect.x, face.rect.y, face.rect.width, face.rect.height);
 
-            face.eyes.forEach(eye => {
-              ctx.strokeStyle = 'blue';
+            face.eyes.forEach((eye) => {
+              ctx.strokeStyle = "blue";
               ctx.lineWidth = 1;
               ctx.strokeRect(eye.x, eye.y, eye.width, eye.height);
             });
@@ -157,7 +174,7 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
 
     try {
       // Get videoSrc from data attribute if needed
-      const videoSrc = document.currentScript?.getAttribute('data-video-src');
+      const videoSrc = document.currentScript?.getAttribute("data-video-src");
 
       if (videoSrc) {
         console.log(`Loading video from source: ${videoSrc}`);
@@ -181,7 +198,9 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
       const initialized = await detector.init();
 
       if (!initialized) {
-        displayError("Failed to initialize object detection. Check cascade files and OpenCV.js loading.");
+        displayError(
+          "Failed to initialize object detection. Check cascade files and OpenCV.js loading.",
+        );
         return;
       }
       console.log("HaarDetector initialized successfully.");
@@ -216,7 +235,6 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
       feedLoading?.classList.add("hidden");
       videoElement.classList.remove("hidden");
       feedError?.classList.add("hidden");
-
     } catch (err: unknown) {
       console.error("Initialization error:", err);
 
@@ -225,7 +243,8 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
       if (err instanceof DOMException) {
         switch (err.name) {
           case "NotAllowedError":
-            userFacingMessage = "Camera access was denied. Please allow camera access in your browser settings.";
+            userFacingMessage =
+              "Camera access was denied. Please allow camera access in your browser settings.";
             break;
           case "NotFoundError":
           case "DevicesNotFoundError":
@@ -235,9 +254,12 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
             userFacingMessage = "The camera is already in use or could not be accessed.";
             break;
           case "OverconstrainedError":
-            userFacingMessage = "Camera constraints could not be satisfied. Trying with basic video access...";
+            userFacingMessage =
+              "Camera constraints could not be satisfied. Trying with basic video access...";
             try {
-              const basicMediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+              const basicMediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+              });
               await playVideoAndPrepareCanvas(basicMediaStream);
               detector = new HaarDetector(cascadePath);
               if (await detector.init()) {
@@ -246,7 +268,8 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
               }
             } catch (basicErr: unknown) {
               console.error("Basic getUserMedia attempt failed:", basicErr);
-              userFacingMessage = "Could not access camera even with basic settings. Please check your system and browser permissions.";
+              userFacingMessage =
+                "Could not access camera even with basic settings. Please check your system and browser permissions.";
             }
             break;
           case "AbortError":
@@ -268,7 +291,7 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
   });
 
   // Cleanup on page unload
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener("beforeunload", () => {
     console.log("Page unloading. Cleaning up resources...");
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
@@ -280,14 +303,13 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
       detector = null;
     }
 
-    const videoElement = document.getElementById('feed-video') as HTMLVideoElement | null;
+    const videoElement = document.getElementById("feed-video") as HTMLVideoElement | null;
     if (videoElement && videoElement.srcObject instanceof MediaStream) {
       const stream = videoElement.srcObject;
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       videoElement.srcObject = null;
     }
     console.log("Cleanup complete.");
-    
   });
 </script>
 
@@ -295,8 +317,8 @@ const { videoSrc, cascadePath = '/cascades/' } = Astro.props;
   // Pass props to the main script via data attributes
   if (document.currentScript) {
     if (videoSrc) {
-      document.currentScript.setAttribute('data-video-src', videoSrc);
+      document.currentScript.setAttribute("data-video-src", videoSrc);
     }
-    document.currentScript.setAttribute('data-cascade-path', cascadePath);
+    document.currentScript.setAttribute("data-cascade-path", cascadePath);
   }
 </script>
