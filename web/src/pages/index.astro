@@ -1,13 +1,96 @@
 ---
-import Feed from '@/components/Feed.astro';
-import Layout from '@/layouts/Layout.astro';
-import Menu from '@/components/Menu.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Feed from "@/components/Feed.astro";
+import Layout from "@/layouts/Layout.astro";
+import Menu from "@/components/Menu";
 ---
 
 <Layout>
-	<Menu/>
+	<Menu client:only="react" />
 	<Feed />
 </Layout>
+<script>
+	// Import your Nanostore atoms
+	import { $ConnectionStatus } from "@/stores/connection";
+	import { $PersonInFrame, $ImageData, $PersonResponse } from "@/stores/detector";
+	import { imageDataToBase64 } from "@/lib/image"; // Assuming this utility is available
+
+	// Initialize status messages for better clarity
+	const INITIAL_STATUS = "Connecting...";
+	const CONNECTED_STATUS = "Connected";
+	const DISCONNECTED_STATUS = "Disconnected";
+	const ERROR_STATUS = "Connection Error";
+
+	// Set initial state for the connection status store
+	$ConnectionStatus.set({ connected: false, statusMessage: INITIAL_STATUS });
+
+	// Declare the WebSocket connection variable here so it's accessible
+	const connection = new WebSocket(process.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
+
+	// Subscribe to person in frame status changes
+	$PersonInFrame.subscribe((state) => {
+		// Only proceed if a person is detected AND the WebSocket connection is open
+		if (state) {
+			// Check if the WebSocket is in the OPEN state before sending
+			if (connection.readyState === WebSocket.OPEN) {
+				const imageData = $ImageData.get(); // Get the latest image data
+				if (imageData) {
+					connection.send(
+						JSON.stringify({
+							event: "image_push",
+							id: "00", // Consider making this dynamic if multiple clients/users
+							data: imageDataToBase64(imageData),
+						}),
+					);
+					console.log("personInFrame: true. Image sent to backend.");
+				} else {
+					console.warn("personInFrame: true, but no ImageData available to send.");
+				}
+			} else {
+				console.warn("personInFrame: true, but WebSocket is not open. Image not sent.");
+				// Optional: You could queue the image here to send once connected,
+				// but for real-time video, sending stale frames might not be desirable.
+			}
+		} else {
+			// Clear personResponse
+			$PersonResponse.set(null);
+			$ImageData.set(null);
+			console.log("personInFrame: false.");
+		}
+	});
+
+	// WebSocket event listeners
+	connection.addEventListener("open", (e) => {
+		console.log("WebSocket opened.");
+		$ConnectionStatus.set({ connected: true, statusMessage: CONNECTED_STATUS });
+	});
+
+	connection.addEventListener("close", (e) => {
+		console.log("WebSocket closed.");
+		$ConnectionStatus.set({ connected: false, statusMessage: DISCONNECTED_STATUS });
+	});
+
+	connection.addEventListener("error", (e) => {
+		console.error("WebSocket error:", e);
+		$ConnectionStatus.set({ connected: false, statusMessage: ERROR_STATUS });
+	});
+
+	// Optional: Listen for messages if you need to update status based on server messages
+	connection.addEventListener("message", (e) => {
+		console.log("WebSocket message:", e.data);
+		const parsedResponse = JSON.parse(e.data);
+		// {"event": "server_response_00", "status": "recognized", "label": "03", "confidence": [0.0, 0.0, 1.0]}
+		if (parsedResponse.event === "server_response" && parsedResponse.status === "recognized")
+			$PersonResponse.set({
+				label: parsedResponse.label,
+				confidence: parsedResponse.confidence[parseInt(parsedResponse.label) - 1],
+			});
+	});
+
+	// Cleanup on page unload
+	window.addEventListener("beforeunload", () => {
+		if (connection.readyState === WebSocket.OPEN) {
+			console.log("Closing WebSocket connection on unload.");
+			connection.close();
+		}
+	});
+</script>

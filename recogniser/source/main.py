@@ -68,7 +68,7 @@ async def websocket_handler(websocket):
 
             frame = base64_to_image(request.get("data"))
             if frame is None:
-                response = {"event": f"server_response_{request_id}", "status": "error", "message": "Failed to decode image."}
+                response = {"event": f"server_response", "status": "error", "message": "Failed to decode image."}
                 await websocket.send(json.dumps(response))
                 continue
 
@@ -101,7 +101,7 @@ async def websocket_handler(websocket):
             # Ensure the model is loaded before trying to predict
             if RECOGNITION_MODEL.model is None:
                  print("Recognition model is not loaded. Cannot predict.")
-                 response = {"event": f"server_response_{request_id}", "status": "error", "message": "Model not ready."}
+                 response = {"event": f"server_response", "status": "error", "message": "Model not ready."}
                  await websocket.send(json.dumps(response))
                  continue
 
@@ -110,7 +110,7 @@ async def websocket_handler(websocket):
             print(f"[{request_id}] Recognition complete. Label: {predicted_label} and Confidence: {predicted_probabilty}")
 
             response = {
-                "event": f"server_response_{request_id}", 
+                "event": f"server_response", 
                 "status": "recognized", 
                 "label": predicted_label, 
                 "confidence": predicted_probabilty.tolist()

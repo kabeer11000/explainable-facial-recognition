@@ -147,7 +147,7 @@ export class HaarDetector {
    * @returns {DetectedFace[]} An array of detected faces, each containing its rectangle and an array of eye rectangles.
    *                           Returns an empty array if classifiers are not loaded or an error occurs.
    */
-  public detect(source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, ctx): DetectedFace[] {
+  public detect(source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, ctx: CanvasRenderingContext2D, options: any): DetectedFace[] {
     if (!this.faceCascade || !this.eyeCascade) {
       console.error("Haar cascade classifiers are not loaded. Call init() first and await its completion.");
       return [];
@@ -156,24 +156,43 @@ export class HaarDetector {
     // Allocate Mats (OpenCV.js image matrices) for processing
     // Read the image data from the HTML element into 'src' Mat
     let src = cv.matFromImageData(ctx.getImageData(0, 0, source.width, source.height));
+    const { applyEqualization = false, gamma = 1.0 } = options || {};
     let gray = new cv.Mat();
     let faces = new cv.RectVector();
-    let eyes = new cv.RectVector();
+    // let eyes = new cv.RectVector();
     let detectedFacesData: DetectedFace[] = [];
 
     try {
       // Convert to grayscale for detection
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+      // cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+      // --- IMAGE NORMALIZATION ---
+      if (applyEqualization) {
+        cv.equalizeHist(gray, gray); // Apply histogram equalization in-place
+        console.log("Applied Histogram Equalization.");
+      }
+
+      if (gamma !== 1.0) {
+        // For gamma correction, we'll create a lookup table (LUT)
+        // This is efficient for 8-bit images.
+        let lut = new cv.Mat(1, 256, cv.CV_8UC1);
+        for (let i = 0; i < 256; i++) {
+          lut.data[i] = cv.saturate_cast(cv.CV_8UC1, Math.pow(i / 255.0, gamma) * 255.0);
+        }
+        cv.LUT(gray, lut, gray); // Apply LUT in-place
+        lut.delete(); // Release LUT memory
+        console.log(`Applied Gamma Correction with gamma: ${gamma}`);
+      }
+      // --- END IMAGE NORMALIZATION ---
 
       // Detect faces in the grayscale image
       // Parameters: image, faces (output), scaleFactor, minNeighbors, flags, minSize, maxSize
       this.faceCascade.detectMultiScale(
-        gray,
+        src,
         faces,
-        1.1, // Scale factor (how much the image size is reduced at each image scale)
-        3,   // Minimum number of neighbors each candidate rectangle should have
+        1.25, // Scale factor (how much the image size is reduced at each image scale)
+        1,   // Minimum number of neighbors each candidate rectangle should have
         0,   // Flag for old cascade format (not commonly used with newer XMLs)
-        new cv.Size(30, 30), // Minimum possible object size. Objects smaller than that are ignored.
+        new cv.Size(40, 40), // Minimum possible object size. Objects smaller than that are ignored.
         new cv.Size(src.cols, src.rows) // Maximum possible object size. Objects larger are ignored.
       );
       if (this.log) console.log('image width: ' + src.cols + '\n' +
@@ -187,33 +206,33 @@ export class HaarDetector {
       for (let i = 0; i < faces.size(); ++i) {
         const faceRect = faces.get(i);
 
-        // Define the Region of Interest (ROI) for the current face in the grayscale image
-        const roiGray = gray.roi(faceRect);
+        // // Define the Region of Interest (ROI) for the current face in the grayscale image
+        // const roiGray = gray.roi(faceRect);
 
-        const eyesInFace: { x: number; y: number; width: number; height: number }[] = [];
+        // const eyesInFace: { x: number; y: number; width: number; height: number }[] = [];
 
-        // Detect eyes within the detected face region
-        this.eyeCascade.detectMultiScale(
-          roiGray,
-          eyes,
-          1.1,
-          3,
-          0,
-          new cv.Size(15, 15), // Minimum eye size
-          new cv.Size(roiGray.cols, roiGray.rows) // Maximum eye size (within face ROI)
-        );
+        // // Detect eyes within the detected face region
+        // this.eyeCascade.detectMultiScale(
+        //   roiGray,
+        //   eyes,
+        //   1.1,
+        //   3,
+        //   0,
+        //   new cv.Size(15, 15), // Minimum eye size
+        //   new cv.Size(roiGray.cols, roiGray.rows) // Maximum eye size (within face ROI)
+        // );
 
-        // Iterate through detected eyes within the current face's ROI
-        for (let j = 0; j < eyes.size(); ++j) {
-          const eyeRect = eyes.get(j);
-          // Convert eye coordinates from ROI-relative to original image-relative
-          eyesInFace.push({
-            x: faceRect.x + eyeRect.x,
-            y: faceRect.y + eyeRect.y,
-            width: eyeRect.width,
-            height: eyeRect.height,
-          });
-        }
+        // // Iterate through detected eyes within the current face's ROI
+        // for (let j = 0; j < eyes.size(); ++j) {
+        //   const eyeRect = eyes.get(j);
+        //   // Convert eye coordinates from ROI-relative to original image-relative
+        //   eyesInFace.push({
+        //     x: faceRect.x + eyeRect.x,
+        //     y: faceRect.y + eyeRect.y,
+        //     width: eyeRect.width,
+        //     height: eyeRect.height,
+        //   });
+        // }
 
         // Store the detected face and its eyes
         detectedFacesData.push({
@@ -223,10 +242,11 @@ export class HaarDetector {
             width: faceRect.width,
             height: faceRect.height,
           },
-          eyes: eyesInFace,
+          eyes: []
+          // eyes: eyesInFace,
         });
         if (this.log) console.log(detectedFacesData);
-        roiGray.delete(); // Release memory for the ROI Mat
+        // roiGray.delete(); // Release memory for the ROI Mat
       }
     } catch (error) {
       console.error("Error during face and eye detection:", error);
@@ -234,9 +254,9 @@ export class HaarDetector {
     } finally {
       // Always release memory for OpenCV.js Mats and Vectors
       src.delete();
-      gray.delete();
+      // gray.delete();
       faces.delete();
-      eyes.delete();
+      // eyes.delete();
     }
 
     return detectedFacesData;

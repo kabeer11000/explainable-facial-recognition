@@ -28,17 +28,12 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
     </div>
 
     <canvas
-      class="feed-overlay absolute inset-0 z-50 w-full h-full bg-transparent pointer-events-none"
+      class="feed-overlay absolute inset-0 z-50 w-auto h-full bg-transparent pointer-events-none" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"
       id="feed-overlay-canvas"></canvas>
-
-    <div
-      class="feed-info absolute bottom-4 left-4 bg-black/60 text-white px-4 py-2 rounded-lg text-sm z-20">
-      <p class="info-text m-0 p-1 text-xs text-neutral-400">Live Feed</p>
-    </div>
 
     <video
       id="feed-video"
-      class="feed-video w-full h-full object-cover block"
+      class="feed-video w-auto h-full object-cover block"
       title="Your video feed"
       playsinline
       crossorigin="anonymous"
@@ -57,9 +52,15 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
   }
 
   import { HaarDetector } from "@/lib/haar-cascades";
+  import { $PersonInFrame, $ImageData, $PersonResponse } from "@/stores/detector";
 
   let detector: HaarDetector | null = null;
   let animationFrameId: number = 0;
+  const detectionConfidenceThreshold = 3;
+  const noDetectionTolerance = 10;
+  // State variables for persistence logic
+  let consecutiveDetectionCount: number = 0;
+  let consecutiveNoDetectionCount: number = 0;
 
   // Get cascade path from data attribute
   const cascadePath = document.currentScript?.getAttribute("data-cascade-path") || "/cascades/";
@@ -153,18 +154,64 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
         if (!videoElement.paused && !videoElement.ended && detector && ctx) {
           ctx.drawImage(videoElement, 0, 0, canvasElement!.width, canvasElement!.height);
 
-          const detectedFaces = detector.detect(canvasElement, ctx);
+          const detectedFaces = detector.detect(canvasElement, ctx, {});
+          // A face is being detected
+          // --- Persistence Logic for personInFrame ---
+          if (detectedFaces.length > 0) {
+            consecutiveDetectionCount++;
+            consecutiveNoDetectionCount = 0; // Reset no detection counter
 
-          detectedFaces.forEach((face) => {
+            if (
+              consecutiveDetectionCount >= detectionConfidenceThreshold &&
+              !$PersonInFrame.get()
+            ) {
+              console.log("personInFrame: true (confirmed)");
+              // Set ImageData atom
+              $ImageData.set(
+                ctx.getImageData(
+                  detectedFaces[0].rect.x,
+                  detectedFaces[0].rect.y,
+                  detectedFaces[0].rect.width,
+                  detectedFaces[0].rect.height,
+                ),
+              );
+              $PersonInFrame.set(true);
+            }
+          } else {
+            consecutiveNoDetectionCount++;
+            consecutiveDetectionCount = 0; // Reset detection counter
+
+            if (consecutiveNoDetectionCount >= noDetectionTolerance && $PersonInFrame.get()) {
+              $PersonInFrame.set(false);
+              console.log("personInFrame: false (confirmed)");
+            }
+          }
+
+          const personResponse = $PersonResponse.get();
+          detectedFaces.slice(0, 1).forEach((face) => {
             ctx.strokeStyle = "red";
             ctx.lineWidth = 2;
             ctx.strokeRect(face.rect.x, face.rect.y, face.rect.width, face.rect.height);
+            // Draw label and confidence if available from the store
+            console.log(personResponse)
+            if (personResponse && personResponse.label) {
+              const labelText = `${personResponse.label} (${(personResponse.confidence * 100).toFixed(2)}%)`;
+              ctx.fillStyle = "red"; // Text color
+              ctx.font = "16px Arial"; // Font size and family
+              ctx.textAlign = "left";
 
-            face.eyes.forEach((eye) => {
-              ctx.strokeStyle = "blue";
-              ctx.lineWidth = 1;
-              ctx.strokeRect(eye.x, eye.y, eye.width, eye.height);
-            });
+              // Draw text slightly above the bounding box
+              ctx.fillText(
+                labelText,
+                face.rect.x,
+                face.rect.y > 20 ? face.rect.y - 10 : face.rect.y + 20,
+              );
+            }
+            // face.eyes.forEach((eye) => {
+            //   ctx.strokeStyle = "blue";
+            //   ctx.lineWidth = 1;
+            //   ctx.strokeRect(eye.x, eye.y, eye.width, eye.height);
+            // });
           });
         }
         animationFrameId = requestAnimationFrame(processFrame);
