@@ -24,7 +24,7 @@ import Menu from "@/components/Menu";
 	$ConnectionStatus.set({ connected: false, statusMessage: INITIAL_STATUS });
 
 	// Declare the WebSocket connection variable here so it's accessible
-	const connection = new WebSocket(process.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
+	let connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
 
 	// Subscribe to person in frame status changes
 	$PersonInFrame.subscribe((state) => {
@@ -67,6 +67,9 @@ import Menu from "@/components/Menu";
 	connection.addEventListener("close", (e) => {
 		console.log("WebSocket closed.");
 		$ConnectionStatus.set({ connected: false, statusMessage: DISCONNECTED_STATUS });
+		setInterval(() => {
+			connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
+		}, 4000);
 	});
 
 	connection.addEventListener("error", (e) => {

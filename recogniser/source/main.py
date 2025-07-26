@@ -79,6 +79,7 @@ async def websocket_handler(websocket):
             # Resize the grayscale frame
             # The `resize` function from skimage.transform returns float64 in [0.0, 1.0]
             resized_frame_gray_float = resize(frame_gray, IMAGE_SIZE, anti_aliasing=True)
+            resized_frame_float = resize(frame, IMAGE_SIZE, anti_aliasing=True)
             
             # Convert back to uint8 [0-255] for OpenCV operations like imshow or saving
             cropped_face_gray_uint8 = (resized_frame_gray_float * 255).astype(np.uint8)
@@ -94,7 +95,7 @@ async def websocket_handler(websocket):
             # If it expects uint8, pass cropped_face_gray_uint8
             # Assuming FeatureExtractor expects the normalized float image based on typical ML pipelines
             extractor = FeatureExtractor(resized_frame_gray_float) 
-            feature_vector = extractor.calculate()
+            feature_vector = np.concatenate([extractor.calculate().flatten(), resized_frame_float.flatten()])
 
             prediction_input = np.array([feature_vector]) # Wrap in a list for single sample prediction
             
@@ -112,7 +113,7 @@ async def websocket_handler(websocket):
             response = {
                 "event": f"server_response", 
                 "status": "recognized", 
-                "label": predicted_label, 
+                "label": int(predicted_label), 
                 "confidence": predicted_probabilty.tolist()
             }
             await websocket.send(json.dumps(response))
@@ -125,7 +126,7 @@ async def websocket_handler(websocket):
         print(f"An unexpected error occurred in websocket_handler: {e}")
         # Optionally send an error response to the client
         try:
-            if websocket.open:
+            if websocket:
                 response = {"event": "server_error", "message": str(e)}
                 await websocket.send(json.dumps(response))
         except Exception as send_e:

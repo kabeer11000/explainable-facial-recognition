@@ -3,3 +3,4 @@ features.pkl
 labels.pkl
 
 **.venv
+**.pkl

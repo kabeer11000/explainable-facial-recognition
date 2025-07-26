@@ -26,6 +26,7 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
       class="feed-loading absolute inset-0 flex justify-center items-center bg-black/70 text-white text-center z-10">
       <p class="loading-message text-white p-1">[Loading video feed...]</p>
     </div>
+    <div class="disconnected-blurred transition-all duration-300 hidden bg-neutral-300 opacity-50 fixed inset-0 z-50 cursor-pointer w-screen h-screen"></div>
 
     <canvas
       class="feed-overlay absolute inset-0 z-50 w-auto h-full bg-transparent pointer-events-none" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"
@@ -53,11 +54,19 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
 
   import { HaarDetector } from "@/lib/haar-cascades";
   import { $PersonInFrame, $ImageData, $PersonResponse } from "@/stores/detector";
+	import { $ConnectionStatus } from "@/stores/connection";
+
+  const disconnectedBackdrop = document.querySelector('.disconnected-blurred');
+
+  $ConnectionStatus.subscribe((value) => {
+    if (!value) return disconnectedBackdrop?.classList.remove('hidden')
+    return disconnectedBackdrop?.classList.add('hidden')
+  })
 
   let detector: HaarDetector | null = null;
   let animationFrameId: number = 0;
   const detectionConfidenceThreshold = 3;
-  const noDetectionTolerance = 10;
+  const noDetectionTolerance = 5;
   // State variables for persistence logic
   let consecutiveDetectionCount: number = 0;
   let consecutiveNoDetectionCount: number = 0;
@@ -193,7 +202,6 @@ const { videoSrc, cascadePath = "/cascades/" } = Astro.props;
             ctx.lineWidth = 2;
             ctx.strokeRect(face.rect.x, face.rect.y, face.rect.width, face.rect.height);
             // Draw label and confidence if available from the store
-            console.log(personResponse)
             if (personResponse && personResponse.label) {
               const labelText = `${personResponse.label} (${(personResponse.confidence * 100).toFixed(2)}%)`;
               ctx.fillStyle = "red"; // Text color

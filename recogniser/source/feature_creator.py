@@ -75,7 +75,9 @@ for person in persons:
         x, y, w, h = faces[0]['rect']
         cropped_face = smoothed_image[y:y+h, x:x+w]
         print(f"Cropped face for {image_file}")
-
+        
+        
+        cropped_face_gray = cropped_face
 
 
         # Convert cropped face to grayscale
@@ -88,13 +90,14 @@ for person in persons:
 
         # Use anti_aliasing to smooth during resize
         cropped_face_gray = resize(cropped_face_gray, fixed_size, anti_aliasing=True)
+        cropped_face_resized = resize(cropped_face, fixed_size, anti_aliasing=True)
         # cv2.imwrite('./cropped-test-image.jpg', (cropped_face_gray * 255).astype(np.uint8))
         # cv2.imshow('Cropped Face', cropped_face_gray)
         # cv2.waitKey(0)
         # break
         # 5. Extract features
         extractor = FeatureExtractor(cropped_face_gray)
-        feature_vector = extractor.calculate()
+        feature_vector = np.concatenate([extractor.calculate().flatten(), cropped_face_resized.flatten()])
         print(feature_vector.shape)
         print(f"Extracted features for {image_file}")
         features.append(feature_vector)
@@ -110,32 +113,3 @@ joblib.dump(labels, 'labels.pkl')
 
 print("Features and labels dumped successfully using joblib.")
 
-from sklearn.model_selection import train_test_split
-
-# X = features, y = labels
-X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
-
-
-print("Training Decision Tree Classifier...")
-clf = DecisionTreeClassifier(max_depth=6, min_samples_leaf=4)
-clf.fit(X_train, y_train)
-print("Training complete.")
-
-y_pred = clf.predict(X_test)
-
-from sklearn.metrics import accuracy_score
-
-print("Accuracy:", accuracy_score(y_test, y_pred))
-
-from sklearn.metrics import confusion_matrix
-
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-
-from sklearn.metrics import classification_report
-
-print("Classification Report:\n", classification_report(y_test, y_pred))
-
-# 7. Save the trained model
-joblib.dump(clf, "decision_tree_model.pkl")
-joblib.dump(clf.label_encoder, "label_encoder.pkl")
-print("Model saved as decision_tree_model.pkl")

@@ -28,7 +28,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 
 
 print("Training Decision Tree Classifier...")
-clf = DecisionTreeClassifier(max_depth=2, min_samples_leaf=8)
+clf = DecisionTreeClassifier(max_depth=10, criterion='entropy', min_samples_leaf=5, min_samples_split=10)
 clf.fit(X_train, y_train)
 print("Training complete.")
 
