@@ -26,7 +26,8 @@ import Menu from "@/components/Menu";
 	$ConnectionStatus.set({ connected: false, statusMessage: INITIAL_STATUS });
 
 	// Declare the WebSocket connection variable here so it's accessible
-	let connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
+	let connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://192.168.100.38:8765");
+	let intervalId: null | number = null;
 
 	// Subscribe to person in frame status changes
 	$PersonInFrame.subscribe((state) => {
@@ -64,14 +65,15 @@ import Menu from "@/components/Menu";
 	connection.addEventListener("open", (e) => {
 		console.log("WebSocket opened.");
 		$ConnectionStatus.set({ connected: true, statusMessage: CONNECTED_STATUS });
+		if (intervalId !== null) clearInterval(intervalId);
 	});
 
 	connection.addEventListener("close", (e) => {
 		console.log("WebSocket closed.");
 		$ConnectionStatus.set({ connected: false, statusMessage: DISCONNECTED_STATUS });
-		setInterval(() => {
+		intervalId = setInterval(() => {
 			connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
-		}, 4000);
+		}, 4000) as any;
 	});
 
 	connection.addEventListener("error", (e) => {
@@ -83,11 +85,11 @@ import Menu from "@/components/Menu";
 	connection.addEventListener("message", (e) => {
 		console.log("WebSocket message:", e.data);
 		const parsedResponse = JSON.parse(e.data);
-		// {"event": "server_response_00", "status": "recognized", "label": "03", "confidence": [0.0, 0.0, 1.0]}
+		// {"event": "server_response_00", "status": "recognized", "label": "03", "confidence": 0.141}
 		if (parsedResponse.event === "server_response" && parsedResponse.status === "recognized")
 			$PersonResponse.set({
 				label: parsedResponse.label,
-				confidence: parsedResponse.confidence[parseInt(parsedResponse.label) - 1],
+				confidence: parsedResponse.confidence,
 			});
 	});
 

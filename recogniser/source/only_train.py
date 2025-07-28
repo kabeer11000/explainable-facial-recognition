@@ -3,7 +3,7 @@ from pathlib import Path
 from feature_extractor import FeatureExtractor
 from haar_detector import initialize_haar_detectors, detect_faces_and_eyes
 from utilities import apply_thresholded_smoothing, estimate_noise_level
-from Model import DecisionTreeClassifier
+from ForestModel import RandomForestClassifier
 import joblib
 import numpy as np
 from skimage.transform import resize
@@ -28,7 +28,8 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 
 
 print("Training Decision Tree Classifier...")
-clf = DecisionTreeClassifier(max_depth=10, criterion='entropy', min_samples_leaf=5, min_samples_split=10)
+# clf = DecisionTreeClassifier(max_depth=10, criterion='entropy', min_samples_leaf=5, min_samples_split=10)
+clf = RandomForestClassifier(n_estimators=100, max_depth=None, min_samples_split=2, min_samples_leaf=1, criterion='gini', random_state=42)
 clf.fit(X_train, y_train)
 print("Training complete.")
 
@@ -47,6 +48,6 @@ from sklearn.metrics import classification_report
 print("Classification Report:\n", classification_report(y_test, y_pred))
 
 # 7. Save the trained model
-joblib.dump(clf, "decision_tree_model.pkl")
-joblib.dump(clf.label_encoder, "label_encoder.pkl")
-print("Model saved as decision_tree_model.pkl")
+joblib.dump(clf, "random_forest_model.pkl")
+joblib.dump(clf.label_encoder, "random_forest_label_encoder.pkl")
+print("Model saved as random_forest_model.pkl")

@@ -32,9 +32,9 @@ for person in persons:
         continue
         print(f"Processing person: {person}")
 
-    images = os.listdir(person_dir)[0:50]
+    images = os.listdir(person_dir)
     images.sort()
-    for image_file in images:  # Limit to first 10 images for testing
+    for image_file in images[0:50]:  # Limit to first 10 images for testing
         image_path = person_dir / image_file
         if image_path.suffix.lower() not in ['.jpg', '.jpeg', '.png']:
             continue

@@ -6,7 +6,7 @@ import cv2  # Used only for imdecode/imencode
 import numpy as np
 from skimage.transform import resize # <--- ADD THIS IMPORT for 'resize'
 
-from Model import DecisionTreeClassifier # Assuming this is your custom class
+from ForestModel import RandomForestClassifier # Assuming this is your custom class
 
 import joblib
 from feature_extractor import FeatureExtractor
@@ -15,10 +15,10 @@ from utilities import apply_thresholded_smoothing # Not used in this snippet but
 
 # --- Configuration ---
 IMAGE_SIZE = (128, 128)
-MODEL_PATH = 'decision_tree_model.pkl'
+MODEL_PATH = 'random_forest_model.pkl'
 
 # Initialize an instance of your custom DecisionTreeClassifier wrapper
-RECOGNITION_MODEL = DecisionTreeClassifier()
+RECOGNITION_MODEL = RandomForestClassifier()
 
 def setup_model():
     print("Loading model for WebSocket...")
@@ -113,9 +113,10 @@ async def websocket_handler(websocket):
             response = {
                 "event": f"server_response", 
                 "status": "recognized", 
-                "label": int(predicted_label), 
-                "confidence": predicted_probabilty.tolist()
+                "label": (predicted_label) if (predicted_probabilty[int(predicted_label)-1]) > 0.5 else 'Unknown', 
+                "confidence": predicted_probabilty.tolist()[int(predicted_label)-1]
             }
+            print(response)
             await websocket.send(json.dumps(response))
 
     except websockets.exceptions.ConnectionClosed:
@@ -135,9 +136,16 @@ async def websocket_handler(websocket):
 
 async def main():
     setup_model()
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",  # Or specify your allowed origins, e.g., "http://localhost:3000"
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS", # Important for preflight if it were an HTTP endpoint
+        "Access-Control-Allow-Headers": "Content-Type, Authorization", # Relevant headers
+        "Access-Control-Max-Age": "86400", # Cache preflight response for 24 hours
+    }
+
     # The `websockets.serve` function correctly passes `websocket` and `path`
     # to the `websocket_handler` function.
-    async with websockets.serve(websocket_handler, "localhost", 8765):
+    async with websockets.serve(websocket_handler, "0.0.0.0", 8765, extra_headers=cors_headers):
         print("WebSocket server started on ws://localhost:8765")
         await asyncio.Future() # Keep the server running indefinitely
 
