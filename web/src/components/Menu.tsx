@@ -45,7 +45,8 @@ const Menu = () => {
 
           </div>
         </div>
-        <div className='gap-x-4 flex justify-end'><a href="https://kabeers.network/research/">About</a><a href="/paper/document.pdf">Paper</a></div>
+        <div className='gap-x-4 flex justify-end'><a href="https://kabeers.network/research/">About</a><a href="/paper/document.pdf">Paper</a>
+        <a href="/upload">Upload</a></div>
 
       </div>
     </>

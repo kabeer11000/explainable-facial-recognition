@@ -6,20 +6,26 @@ import cv2  # Used only for imdecode/imencode
 import numpy as np
 from skimage.transform import resize # <--- ADD THIS IMPORT for 'resize'
 
-from ForestModel import RandomForestClassifier # Assuming this is your custom class
-
 import joblib
 from feature_extractor import FeatureExtractor
 from haar_detector import initialize_haar_detectors, detect_faces_and_eyes # Not used in this snippet but keep if needed elsewhere
 from utilities import apply_thresholded_smoothing # Not used in this snippet but keep if needed elsewhere
+import xgboost as xgb # Import XGBoost
 
 # --- Configuration ---
 IMAGE_SIZE = (128, 128) 
-MODEL_PATH = 'random_forest_model.pkl'
-
+MODEL_PATH = 'xgboost_model.pkl'
+LABEL_ENCODER_PATH = 'label_encoder.pkl'
 # Initialize an instance of your custom DecisionTreeClassifier wrapper
-RECOGNITION_MODEL = RandomForestClassifier()
-
+# RECOGNITION_MODEL = xgb.XGBClassifier(
+#     objective='binary:logistic',  # Or 'multi:softmax' if you have more than two classes
+#     n_estimators=100,             # Similar to n_estimators in RandomForest
+#     learning_rate=0.1,            # Controls the step size shrinkage
+#     max_depth=5,                  # Controls the complexity of the trees
+#     use_label_encoder=False,      # Recommended for newer XGBoost versions
+#     eval_metric='logloss',        # A common evaluation metric for classification
+#     random_state=42               # For reproducibility
+# )
 def setup_model():
     print("Loading model for WebSocket...")
     try:
@@ -27,8 +33,7 @@ def setup_model():
         loaded_skl_model = joblib.load(MODEL_PATH)
         
         # Assign the loaded scikit-learn model to your wrapper's 'model' attribute
-        RECOGNITION_MODEL.model = loaded_skl_model.model
-        RECOGNITION_MODEL.label_encoder = loaded_skl_model.label_encoder 
+        RECOGNITION_MODEL = loaded_skl_model
 
         print("Model loaded successfully.")
     except FileNotFoundError:
@@ -94,13 +99,13 @@ async def websocket_handler(websocket):
             # If it expects float, pass resized_frame_gray_float
             # If it expects uint8, pass cropped_face_gray_uint8
             # Assuming FeatureExtractor expects the normalized float image based on typical ML pipelines
-            extractor = FeatureExtractor(resized_frame_gray_float) 
+            extractor = FeatureExtractor(resized_frame_gray_float)
             feature_vector = np.concatenate([extractor.calculate().flatten(), resized_frame_float.flatten()])
 
             prediction_input = np.array([feature_vector]) # Wrap in a list for single sample prediction
             
             # Ensure the model is loaded before trying to predict
-            if RECOGNITION_MODEL.model is None:
+            if RECOGNITION_MODEL is None:
                  print("Recognition model is not loaded. Cannot predict.")
                  response = {"event": f"server_response", "status": "error", "message": "Model not ready."}
                  await websocket.send(json.dumps(response))
@@ -113,8 +118,8 @@ async def websocket_handler(websocket):
             response = {
                 "event": f"server_response", 
                 "status": "recognized", 
-                "label": (predicted_label) if (predicted_probabilty[int(predicted_label)-1]) > 0.5 else 'Unknown', 
-                "confidence": predicted_probabilty.tolist()[int(predicted_label)-1]
+                "label": (predicted_label), # if (predicted_probabilty[int(predicted_label)-1]) > 0.5 else 'Unknown', 
+                "confidence": predicted_probabilty.tolist()
             }
             print(response)
             await websocket.send(json.dumps(response))

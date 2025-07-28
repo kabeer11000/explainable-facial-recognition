@@ -1,13 +1,13 @@
 ---
-import Feed from "@/components/Feed.astro";
+import Image from "@/components/Image.astro";
 import Layout from "@/layouts/Layout.astro";
 import Menu from "@/components/Menu";
 ---
 
 <Layout>
 	<div class="group">
+        <Image/>
 		<Menu client:only="react" />
-		<Feed />
 	</div>
 </Layout>
 <script>
@@ -26,7 +26,7 @@ import Menu from "@/components/Menu";
 	$ConnectionStatus.set({ connected: false, statusMessage: INITIAL_STATUS });
 
 	// Declare the WebSocket connection variable here so it's accessible
-	let connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://localhost:8765");
+	let connection = new WebSocket(import.meta.env.BACKEND_SOCKET_URI ?? "ws://192.168.100.38:8765");
 	let intervalId: null | number = null;
 
 	// Subscribe to person in frame status changes
