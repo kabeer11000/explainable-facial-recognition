@@ -9,7 +9,6 @@ declare global {
     OPENCV_READY: boolean;
   }
 }
-const temp_canvas = document.getElementById('feed-debug-canvas');
 /**
  * Interface for a detected face, including its bounding box and detected eyes.
  */

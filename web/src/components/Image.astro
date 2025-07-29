@@ -1,6 +1,4 @@
-console.log("HaarDetector initialized successfully.");
-      hideLoading();
-      noImagePlaceh---
+---
 interface Props {
   cascadePath?: string;
   maxImageSize?: number;
@@ -149,8 +147,8 @@ const { cascadePath = "/cascades/", maxImageSize = 5 } = Astro.props;
         } else if (typeof cv !== 'undefined' && cv.Mat) {
           // Fallback check if OPENCV_READY flag isn't set
           console.log("OpenCV.js detected (fallback check)");
-          window.OPENCV_READY = true;
-          resolve(true);
+        //   window.OPENCV_READY = true;
+        //   resolve(true);
         } else {
           console.log("Waiting for OpenCV.js...");
           setTimeout(checkOpenCV, 100);
@@ -195,6 +193,7 @@ const { cascadePath = "/cascades/", maxImageSize = 5 } = Astro.props;
     console.log("Initializing HaarDetector...");
     try {
       detector = new HaarDetector(cascadePath);
+      await waitForOpenCV();
       const initialized = await detector.init();
       
       if (!initialized) {
