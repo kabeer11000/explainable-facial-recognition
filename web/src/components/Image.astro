@@ -1,484 +1,529 @@
 ---
 interface Props {
-  cascadePath?: string;
-  maxImageSize?: number;
+    cascadePath?: string;
+    maxImageSize?: number;
 }
 
 const { cascadePath = "/cascades/", maxImageSize = 5 } = Astro.props;
 ---
 
-<div class="image-container w-full h-screen flex flex-col justify-center items-center box-border px-4">
-  <div class="upload-section mb-6 z-20 relative">
-    <div class="upload-area border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/90 backdrop-blur-sm hover:border-blue-400 transition-colors duration-300">
-      <input
-        type="file"
-        id="image-input"
-        accept="image/*"
-        class="hidden"
-      />
-      <label
-        for="image-input"
-        class="cursor-pointer flex flex-col items-center space-y-3"
-      >
-        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-        </svg>
-        <span class="text-lg font-medium text-gray-700">Click to upload an image</span>
-        <span class="text-sm text-gray-500">Or drag and drop (max {maxImageSize}MB)</span>
-      </label>
+<div
+    class="image-container w-full h-screen flex flex-col justify-center items-center box-border px-4">
+    <div class="upload-section mb-6 z-20 relative">
+        <div
+            class="upload-area border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/90 backdrop-blur-sm hover:border-blue-400 transition-colors duration-300">
+            <input type="file" id="image-input" accept="image/*" class="hidden" />
+            <label for="image-input" class="cursor-pointer flex flex-col items-center space-y-3">
+                <svg
+                    class="w-12 h-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    ></path>
+                </svg>
+                <span class="text-lg font-medium text-gray-700">Click to upload an image</span>
+                <span class="text-sm text-gray-500">Or drag and drop (max {maxImageSize}MB)</span>
+            </label>
+        </div>
     </div>
-  </div>
-
-  <div
-    class="image-display-container w-full h-full relative bg-black rounded-lg overflow-hidden flex justify-center items-center transition-all duration-300 hover:shadow-xl max-w-4xl">
-    
-    <noscript>
-      <p class="text-white">Please enable JavaScript to use image detection.</p>
-    </noscript>
+    <div class="controls-section mt-4 z-20 relative hidden" id="controls-section">
+        <div class="flex space-x-4 justify-center">
+            <button
+                id="process-btn"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors duration-300 font-medium">
+                Detect Faces
+            </button>
+            <button
+                id="clear-btn"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-300 font-medium">
+                Clear Image
+            </button>
+        </div>
+    </div>
 
     <div
-      class="processing-error hidden absolute inset-0 justify-center items-center bg-black/70 text-white text-center z-10">
-      <div class="p-4">
-        <p class="error-title text-red-400 font-bold mb-1">Error processing image.</p>
-        <p class="error-message text-sm" id="error-message"></p>
-      </div>
+        class="image-display-container w-full h-full relative bg-black rounded-lg overflow-hidden flex justify-center items-center transition-all duration-300 hover:shadow-xl max-w-4xl">
+        <noscript>
+            <p class="text-white">Please enable JavaScript to use image detection.</p>
+        </noscript>
+
+        <div
+            class="processing-error hidden absolute inset-0 justify-center items-center bg-black/70 text-white text-center z-10">
+            <div class="p-4">
+                <p class="error-title text-red-400 font-bold mb-1">Error processing image.</p>
+                <p class="error-message text-sm" id="error-message"></p>
+            </div>
+        </div>
+
+        <div
+            class="processing-loading flex absolute inset-0 flex justify-center items-center bg-black/70 text-white text-center z-10">
+            <div class="flex flex-col items-center space-y-3">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <p class="loading-message text-white">Loading face detection system...</p>
+            </div>
+        </div>
+
+        <div
+            class="no-image-placeholder hidden flex flex-col items-center justify-center text-gray-400 text-center">
+            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
+            </svg>
+            <p class="text-lg">Upload an image to start face detection</p>
+        </div>
+
+        <canvas
+            class="detection-overlay absolute inset-0 z-50 bg-transparent pointer-events-none hidden"
+            id="detection-overlay-canvas"
+            style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+        </canvas>
+
+        <img
+            id="uploaded-image"
+            class="uploaded-image max-w-full max-h-full object-contain hidden"
+            alt="Uploaded image for detection"
+        />
     </div>
-
-    <div
-      class="processing-loading flex absolute inset-0 flex justify-center items-center bg-black/70 text-white text-center z-10">
-      <div class="flex flex-col items-center space-y-3">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-        <p class="loading-message text-white">Loading face detection system...</p>
-      </div>
-    </div>
-
-    <div class="no-image-placeholder hidden flex flex-col items-center justify-center text-gray-400 text-center">
-      <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-      </svg>
-      <p class="text-lg">Upload an image to start face detection</p>
-    </div>
-
-    <canvas
-      class="detection-overlay absolute inset-0 z-50 bg-transparent pointer-events-none hidden"
-      id="detection-overlay-canvas"
-      style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
-    </canvas>
-
-    <img
-      id="uploaded-image"
-      class="uploaded-image max-w-full max-h-full object-contain hidden"
-      alt="Uploaded image for detection"
-    />
-  </div>
-
-  <div class="controls-section mt-4 z-20 relative hidden" id="controls-section">
-    <div class="flex space-x-4 justify-center">
-      <button
-        id="process-btn"
-        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors duration-300 font-medium">
-        Detect Faces
-      </button>
-      <button
-        id="clear-btn"
-        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors duration-300 font-medium">
-        Clear Image
-      </button>
-    </div>
-  </div>
 </div>
 
 <script>
-  declare const cv: any;
+    declare const cv: any;
 
-  declare global {
-    interface Window {
-      OPENCV_READY: boolean;
-    }
-  }
-
-  import { HaarDetector } from "@/lib/haar-cascades";
-  import { $PersonInFrame, $ImageData, $PersonResponse } from "@/stores/detector";
-  import { $ConnectionStatus } from "@/stores/connection";
-
-  let detector: HaarDetector | null = null;
-  let currentImageData: ImageData | null = null;
-
-  // Get cascade path from component props
-  const cascadePath = document.currentScript?.getAttribute("data-cascade-path") || "/cascades/";
-  const maxImageSize = parseInt(document.currentScript?.getAttribute("data-max-image-size") || "5") * 1024 * 1024;
-
-  // Global utility functions
-  function displayError(message: string): void {
-    const processingLoading = document.querySelector(".processing-loading") as HTMLDivElement | null;
-    const processingError = document.querySelector(".processing-error") as HTMLDivElement | null;
-    const errorMessageElement = document.getElementById("error-message") as HTMLParagraphElement | null;
-    
-    processingLoading?.classList.add("hidden");
-    processingError?.classList.remove("hidden");
-    if (errorMessageElement) {
-      errorMessageElement.textContent = message;
-    }
-  }
-
-  function hideError(): void {
-    const processingError = document.querySelector(".processing-error") as HTMLDivElement | null;
-    processingError?.classList.add("hidden");
-  }
-
-  function showLoading(): void {
-    const processingLoading = document.querySelector(".processing-loading") as HTMLDivElement | null;
-    hideError();
-    processingLoading?.classList.remove("hidden");
-  }
-
-  function hideLoading(): void {
-    const processingLoading = document.querySelector(".processing-loading") as HTMLDivElement | null;
-    processingLoading?.classList.add("hidden");
-  }
-
-  // Wait for OpenCV.js to load before initializing
-  async function waitForOpenCV(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const checkOpenCV = () => {
-        if (window.OPENCV_READY && typeof cv !== 'undefined') {
-          console.log("OpenCV.js is ready");
-          resolve(true);
-        } else if (typeof cv !== 'undefined' && cv.Mat) {
-          // Fallback check if OPENCV_READY flag isn't set
-          console.log("OpenCV.js detected (fallback check)");
-        //   window.OPENCV_READY = true;
-        //   resolve(true);
-        } else {
-          console.log("Waiting for OpenCV.js...");
-          setTimeout(checkOpenCV, 100);
+    declare global {
+        interface Window {
+            OPENCV_READY: boolean;
         }
-      };
-      checkOpenCV();
-    });
-  }
-
-  async function initializeApp() {
-    const imageInput = document.getElementById("image-input") as HTMLInputElement | null;
-    const uploadedImage = document.getElementById("uploaded-image") as HTMLImageElement | null;
-    const canvasElement = document.getElementById("detection-overlay-canvas") as HTMLCanvasElement | null;
-    const ctx = canvasElement?.getContext("2d", { willReadFrequently: true });
-    
-    const processingLoading = document.querySelector(".processing-loading") as HTMLDivElement | null;
-    const processingError = document.querySelector(".processing-error") as HTMLDivElement | null;
-    const errorMessageElement = document.getElementById("error-message") as HTMLParagraphElement | null;
-    const noImagePlaceholder = document.querySelector(".no-image-placeholder") as HTMLDivElement | null;
-    const controlsSection = document.getElementById("controls-section") as HTMLDivElement | null;
-    const processBtn = document.getElementById("process-btn") as HTMLButtonElement | null;
-    const clearBtn = document.getElementById("clear-btn") as HTMLButtonElement | null;
-
-    if (!imageInput || !uploadedImage || !canvasElement || !ctx || !processingLoading || 
-        !processingError || !errorMessageElement || !noImagePlaceholder || !controlsSection ||
-        !processBtn || !clearBtn) {
-      console.error("Required DOM elements not found");
-      displayError("Initialization failed: Essential UI elements are missing.");
-      return;
     }
 
-    // Wait for OpenCV.js to load
-    showLoading();
-    const openCVReady = await waitForOpenCV();
-    
-    if (!openCVReady) {
-      displayError("Failed to load OpenCV.js. Please refresh the page and try again.");
-      return;
+    import { HaarDetector } from "@/lib/haar-cascades";
+    import { $PersonInFrame, $ImageData, $PersonResponse, $OpenCVReady } from "@/stores/detector";
+    import { $ConnectionStatus } from "@/stores/connection";
+    // $OpenCVReady.subscribe((value) => {
+    //     if (!value) return;
+    let detector: HaarDetector | null = null;
+    let currentImageData: ImageData | null = null;
+
+    // Get cascade path from component props
+    const cascadePath = document.currentScript?.getAttribute("data-cascade-path") || "/cascades/";
+    const maxImageSize =
+        parseInt(document.currentScript?.getAttribute("data-max-image-size") || "5") * 1024 * 1024;
+
+    // Global utility functions
+    function displayError(message: string): void {
+        const processingLoading = document.querySelector(
+            ".processing-loading",
+        ) as HTMLDivElement | null;
+        const processingError = document.querySelector(
+            ".processing-error",
+        ) as HTMLDivElement | null;
+        const errorMessageElement = document.getElementById(
+            "error-message",
+        ) as HTMLParagraphElement | null;
+
+        processingLoading?.classList.add("hidden");
+        processingError?.classList.remove("hidden");
+        if (errorMessageElement) {
+            errorMessageElement.textContent = message;
+        }
     }
 
-    // Initialize HaarDetector
-    console.log("Initializing HaarDetector...");
-    try {
-      detector = new HaarDetector(cascadePath);
-      await waitForOpenCV();
-      const initialized = await detector.init();
-      
-      if (!initialized) {
-        displayError("Failed to initialize face detection. Check cascade files and OpenCV.js loading.");
-        return;
-      }
-      console.log("HaarDetector initialized successfully.");
-      hideLoading();
-    } catch (err) {
-      console.error("Failed to initialize detector:", err);
-      displayError("Failed to initialize face detection system.");
-      return;
+    function hideError(): void {
+        const processingError = document.querySelector(
+            ".processing-error",
+        ) as HTMLDivElement | null;
+        processingError?.classList.add("hidden");
     }
 
-    function validateFile(file: File): string | null {
-      if (!file.type.startsWith('image/')) {
-        return "Please select a valid image file.";
-      }
-      
-      if (file.size > maxImageSize) {
-        return `Image size must be less than ${maxImageSize / (1024 * 1024)}MB.`;
-      }
-
-      return null;
+    function showLoading(): void {
+        const processingLoading = document.querySelector(
+            ".processing-loading",
+        ) as HTMLDivElement | null;
+        hideError();
+        processingLoading?.classList.remove("hidden");
     }
 
-    function setupCanvas(img: HTMLImageElement): void {
-      const containerRect = canvasElement!.parentElement!.getBoundingClientRect();
-      const maxWidth = containerRect.width;
-      const maxHeight = containerRect.height;
-
-      // Calculate display dimensions maintaining aspect ratio
-      let displayWidth = img.naturalWidth;
-      let displayHeight = img.naturalHeight;
-
-      if (displayWidth > maxWidth || displayHeight > maxHeight) {
-        const widthRatio = maxWidth / displayWidth;
-        const heightRatio = maxHeight / displayHeight;
-        const scale = Math.min(widthRatio, heightRatio);
-        
-        displayWidth *= scale;
-        displayHeight *= scale;
-      }
-
-      // Set canvas dimensions to match displayed image
-      canvasElement!.width = displayWidth;
-      canvasElement!.height = displayHeight;
-      
-      // Update image display
-      uploadedImage!.style.width = `${displayWidth}px`;
-      uploadedImage!.style.height = `${displayHeight}px`;
+    function hideLoading(): void {
+        const processingLoading = document.querySelector(
+            ".processing-loading",
+        ) as HTMLDivElement | null;
+        processingLoading?.classList.add("hidden");
     }
 
-    async function processImage(): Promise<void> {
-      if (!uploadedImage || !detector || !ctx) return;
+    // Wait for OpenCV.js to load before initializing
+    async function waitForOpenCV(): Promise<boolean> {
+        return new Promise((resolve) => {
+            const checkOpenCV = () => {
+                if (window.OPENCV_READY && typeof cv !== "undefined") {
+                    console.log("OpenCV.js is ready");
+                    resolve(true);
+                } else if (typeof cv !== "undefined" && cv.Mat) {
+                    // Fallback check if OPENCV_READY flag isn't set
+                    console.log("OpenCV.js detected (fallback check)");
+                    //   window.OPENCV_READY = true;
+                    //   resolve(true);
+                } else {
+                    console.log("Waiting for OpenCV.js...");
+                    setTimeout(checkOpenCV, 100);
+                }
+            };
+            checkOpenCV();
+        });
+    }
 
-      showLoading();
+    async function initializeApp() {
+        const imageInput = document.getElementById("image-input") as HTMLInputElement | null;
+        const uploadedImage = document.getElementById("uploaded-image") as HTMLImageElement | null;
+        const canvasElement = document.getElementById(
+            "detection-overlay-canvas",
+        ) as HTMLCanvasElement | null;
+        const ctx = canvasElement?.getContext("2d", { willReadFrequently: true });
 
-      try {
-        // Draw image to canvas for processing
-        ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
-        ctx.drawImage(uploadedImage, 0, 0, canvasElement!.width, canvasElement!.height);
+        const processingLoading = document.querySelector(
+            ".processing-loading",
+        ) as HTMLDivElement | null;
+        const processingError = document.querySelector(
+            ".processing-error",
+        ) as HTMLDivElement | null;
+        const errorMessageElement = document.getElementById(
+            "error-message",
+        ) as HTMLParagraphElement | null;
+        const noImagePlaceholder = document.querySelector(
+            ".no-image-placeholder",
+        ) as HTMLDivElement | null;
+        const controlsSection = document.getElementById(
+            "controls-section",
+        ) as HTMLDivElement | null;
+        const processBtn = document.getElementById("process-btn") as HTMLButtonElement | null;
+        const clearBtn = document.getElementById("clear-btn") as HTMLButtonElement | null;
 
-        // Detect faces
-        const detectedFaces = detector.detect(canvasElement!, ctx, {});
-        
-        // Clear canvas and redraw image
-        ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
-        ctx.drawImage(uploadedImage, 0, 0, canvasElement!.width, canvasElement!.height);
+        if (
+            !imageInput ||
+            !uploadedImage ||
+            !canvasElement ||
+            !ctx ||
+            !processingLoading ||
+            !processingError ||
+            !errorMessageElement ||
+            !noImagePlaceholder ||
+            !controlsSection ||
+            !processBtn ||
+            !clearBtn
+        ) {
+            console.error("Required DOM elements not found");
+            displayError("Initialization failed: Essential UI elements are missing.");
+            return;
+        }
 
-        if (detectedFaces.length > 0) {
-          console.log(`Detected ${detectedFaces.length} face(s)`);
-          
-          // Set person in frame and image data for first detected face
-          const firstFace = detectedFaces[0];
-          currentImageData = ctx.getImageData(
-            firstFace.rect.x,
-            firstFace.rect.y,
-            firstFace.rect.width,
-            firstFace.rect.height
-          );
-          
-          $ImageData.set(currentImageData);
-          $PersonInFrame.set(true);
+        // Wait for OpenCV.js to load
+        showLoading();
+        const openCVReady = await waitForOpenCV();
 
-          // Draw detection results
-          detectedFaces.forEach((face, index) => {
-            // Draw face bounding box
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(face.rect.x, face.rect.y, face.rect.width, face.rect.height);
+        if (!openCVReady) {
+            displayError("Failed to load OpenCV.js. Please refresh the page and try again.");
+            return;
+        }
 
-            // Draw face number
-            ctx.fillStyle = "red";
-            ctx.font = "20px Arial";
-            ctx.textAlign = "left";
-            ctx.fillText(
-              `Face ${index + 1}`,
-              face.rect.x,
-              face.rect.y > 25 ? face.rect.y - 10 : face.rect.y + 25
-            );
+        // Initialize HaarDetector
+        console.log("Initializing HaarDetector...");
+        try {
+            detector = new HaarDetector(cascadePath);
+            await waitForOpenCV();
+            const initialized = await detector.init();
 
-            // Draw eye detection if available
-            face.eyes?.forEach((eye) => {
-              ctx.strokeStyle = "blue";
-              ctx.lineWidth = 2;
-              ctx.strokeRect(eye.x, eye.y, eye.width, eye.height);
+            if (!initialized) {
+                displayError(
+                    "Failed to initialize face detection. Check cascade files and OpenCV.js loading.",
+                );
+                return;
+            }
+            console.log("HaarDetector initialized successfully.");
+            hideLoading();
+        } catch (err) {
+            console.error("Failed to initialize detector:", err);
+            displayError("Failed to initialize face detection system.");
+            return;
+        }
+
+        function validateFile(file: File): string | null {
+            if (!file.type.startsWith("image/")) {
+                return "Please select a valid image file.";
+            }
+
+            if (file.size > maxImageSize) {
+                return `Image size must be less than ${maxImageSize / (1024 * 1024)}MB.`;
+            }
+
+            return null;
+        }
+
+        function setupCanvas(img: HTMLImageElement): void {
+            const containerRect = canvasElement!.parentElement!.getBoundingClientRect();
+            const maxWidth = containerRect.width;
+            const maxHeight = containerRect.height;
+
+            // Calculate display dimensions maintaining aspect ratio
+            let displayWidth = img.naturalWidth;
+            let displayHeight = img.naturalHeight;
+
+            if (displayWidth > maxWidth || displayHeight > maxHeight) {
+                const widthRatio = maxWidth / displayWidth;
+                const heightRatio = maxHeight / displayHeight;
+                const scale = Math.min(widthRatio, heightRatio);
+
+                displayWidth *= scale;
+                displayHeight *= scale;
+            }
+
+            // Set canvas dimensions to match displayed image
+            canvasElement!.width = displayWidth;
+            canvasElement!.height = displayHeight;
+
+            // Update image display
+            uploadedImage!.style.width = `${displayWidth}px`;
+            uploadedImage!.style.height = `${displayHeight}px`;
+        }
+
+        async function processImage(): Promise<void> {
+            if (!uploadedImage || !detector || !ctx) return;
+
+            showLoading();
+
+            try {
+                // Draw image to canvas for processing
+                ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
+                ctx.drawImage(uploadedImage, 0, 0, canvasElement!.width, canvasElement!.height);
+
+                // Detect faces
+                const detectedFaces = detector.detect(canvasElement!, ctx, {});
+
+                // Clear canvas and redraw image
+                ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
+                ctx.drawImage(uploadedImage, 0, 0, canvasElement!.width, canvasElement!.height);
+
+                if (detectedFaces.length > 0) {
+                    console.log(`Detected ${detectedFaces.length} face(s)`);
+
+                    // Set person in frame and image data for first detected face
+                    const firstFace = detectedFaces[0];
+                    currentImageData = ctx.getImageData(
+                        firstFace.rect.x,
+                        firstFace.rect.y,
+                        firstFace.rect.width,
+                        firstFace.rect.height,
+                    );
+
+                    $ImageData.set(currentImageData);
+                    $PersonInFrame.set(true);
+
+                    // Draw detection results
+                    detectedFaces.forEach((face, index) => {
+                        // Draw face bounding box
+                        ctx.strokeStyle = "red";
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(face.rect.x, face.rect.y, face.rect.width, face.rect.height);
+
+                        // Draw face number
+                        ctx.fillStyle = "red";
+                        ctx.font = "20px Arial";
+                        ctx.textAlign = "left";
+                        ctx.fillText(
+                            `Face ${index + 1}`,
+                            face.rect.x,
+                            face.rect.y > 25 ? face.rect.y - 10 : face.rect.y + 25,
+                        );
+
+                        // Draw eye detection if available
+                        face.eyes?.forEach((eye) => {
+                            ctx.strokeStyle = "blue";
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(eye.x, eye.y, eye.width, eye.height);
+                        });
+                    });
+
+                    // Check for person response from store and display
+                    const personResponse = $PersonResponse.get();
+                    if (personResponse && personResponse.label) {
+                        const labelText = `${personResponse.label} (${(personResponse.confidence * 100).toFixed(2)}%)`;
+                        ctx.fillStyle = "lime";
+                        ctx.font = "18px Arial";
+                        ctx.textAlign = "left";
+
+                        // Draw label for first face
+                        ctx.fillText(
+                            labelText,
+                            detectedFaces[0].rect.x,
+                            detectedFaces[0].rect.y > 50 ?
+                                detectedFaces[0].rect.y - 35
+                            :   detectedFaces[0].rect.y + 50,
+                        );
+                    }
+                } else {
+                    console.log("No faces detected");
+                    $PersonInFrame.set(false);
+
+                    // Draw "No faces detected" message
+                    ctx.fillStyle = "yellow";
+                    ctx.font = "24px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText(
+                        "No faces detected",
+                        canvasElement!.width / 2,
+                        canvasElement!.height / 2,
+                    );
+                }
+
+                hideLoading();
+                canvasElement!.classList.remove("hidden");
+            } catch (err) {
+                console.error("Error processing image:", err);
+                displayError("Failed to process image. Please try again.");
+                hideLoading();
+            }
+        }
+
+        function clearImage(): void {
+            uploadedImage!.src = "";
+            uploadedImage!.classList.add("hidden");
+            canvasElement!.classList.add("hidden");
+            controlsSection!.classList.add("hidden");
+            noImagePlaceholder!.classList.remove("hidden");
+            hideError();
+            hideLoading();
+
+            // Reset stores
+            $PersonInFrame.set(false);
+            $ImageData.set(null);
+            currentImageData = null;
+
+            // Reset input
+            imageInput!.value = "";
+
+            // Clear canvas
+            if (ctx) {
+                ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
+            }
+        }
+
+        // File input change handler
+        imageInput.addEventListener("change", async (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const file = target.files?.[0];
+
+            if (!file) return;
+
+            const validationError = validateFile(file);
+            if (validationError) {
+                displayError(validationError);
+                return;
+            }
+
+            hideError();
+            showLoading();
+
+            try {
+                const reader = new FileReader();
+                reader.onload = (e: ProgressEvent<FileReader>) => {
+                    if (e.target?.result) {
+                        uploadedImage!.onload = () => {
+                            setupCanvas(uploadedImage!);
+                            hideLoading();
+                            noImagePlaceholder!.classList.add("hidden");
+                            uploadedImage!.classList.remove("hidden");
+                            controlsSection!.classList.remove("hidden");
+                        };
+
+                        uploadedImage!.onerror = () => {
+                            displayError("Failed to load image. Please try a different image.");
+                            hideLoading();
+                        };
+
+                        uploadedImage!.src = e.target.result as string;
+                    }
+                };
+
+                reader.onerror = () => {
+                    displayError("Failed to read file. Please try again.");
+                    hideLoading();
+                };
+
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error("Error loading image:", err);
+                displayError("Failed to load image. Please try again.");
+                hideLoading();
+            }
+        });
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector(".upload-area");
+
+        ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+            uploadArea?.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e: Event) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+            uploadArea?.addEventListener(eventName, () => {
+                uploadArea?.classList.add("border-blue-400", "bg-blue-50");
             });
-          });
+        });
 
-          // Check for person response from store and display
-          const personResponse = $PersonResponse.get();
-          if (personResponse && personResponse.label) {
-            const labelText = `${personResponse.label} (${(personResponse.confidence * 100).toFixed(2)}%)`;
-            ctx.fillStyle = "lime";
-            ctx.font = "18px Arial";
-            ctx.textAlign = "left";
-            
-            // Draw label for first face
-            ctx.fillText(
-              labelText,
-              detectedFaces[0].rect.x,
-              detectedFaces[0].rect.y > 50 ? detectedFaces[0].rect.y - 35 : detectedFaces[0].rect.y + 50
-            );
-          }
+        ["dragleave", "drop"].forEach((eventName) => {
+            uploadArea?.addEventListener(eventName, () => {
+                uploadArea?.classList.remove("border-blue-400", "bg-blue-50");
+            });
+        });
 
-        } else {
-          console.log("No faces detected");
-          $PersonInFrame.set(false);
-          
-          // Draw "No faces detected" message
-          ctx.fillStyle = "yellow";
-          ctx.font = "24px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText(
-            "No faces detected",
-            canvasElement!.width / 2,
-            canvasElement!.height / 2
-          );
+        uploadArea?.addEventListener("drop", (e: DragEvent) => {
+            const files = e.dataTransfer?.files;
+            if (files && files[0]) {
+                imageInput!.files = files;
+                imageInput!.dispatchEvent(new Event("change"));
+            }
+        });
+
+        // Button event listeners
+        processBtn.addEventListener("click", processImage);
+        clearBtn.addEventListener("click", clearImage);
+
+        console.log("Image upload detector initialized successfully.");
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await initializeApp();
+    });
+
+    // Cleanup on page unload
+    window.addEventListener("beforeunload", () => {
+        console.log("Page unloading. Cleaning up resources...");
+
+        if (detector) {
+            detector.dispose();
+            detector = null;
         }
 
-        hideLoading();
-        canvasElement!.classList.remove("hidden");
-
-      } catch (err) {
-        console.error("Error processing image:", err);
-        displayError("Failed to process image. Please try again.");
-        hideLoading();
-      }
-    }
-
-    function clearImage(): void {
-      uploadedImage!.src = "";
-      uploadedImage!.classList.add("hidden");
-      canvasElement!.classList.add("hidden");
-      controlsSection!.classList.add("hidden");
-      noImagePlaceholder!.classList.remove("hidden");
-      hideError();
-      hideLoading();
-      
-      // Reset stores
-      $PersonInFrame.set(false);
-      $ImageData.set(null);
-      currentImageData = null;
-      
-      // Reset input
-      imageInput!.value = "";
-      
-      // Clear canvas
-      if (ctx) {
-        ctx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
-      }
-    }
-
-    // File input change handler
-    imageInput.addEventListener("change", async (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const file = target.files?.[0];
-      
-      if (!file) return;
-
-      const validationError = validateFile(file);
-      if (validationError) {
-        displayError(validationError);
-        return;
-      }
-
-      hideError();
-      showLoading();
-
-      try {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-          if (e.target?.result) {
-            uploadedImage!.onload = () => {
-              setupCanvas(uploadedImage!);
-              hideLoading();
-              noImagePlaceholder!.classList.add("hidden");
-              uploadedImage!.classList.remove("hidden");
-              controlsSection!.classList.remove("hidden");
-            };
-            
-            uploadedImage!.onerror = () => {
-              displayError("Failed to load image. Please try a different image.");
-              hideLoading();
-            };
-            
-            uploadedImage!.src = e.target.result as string;
-          }
-        };
-        
-        reader.onerror = () => {
-          displayError("Failed to read file. Please try again.");
-          hideLoading();
-        };
-        
-        reader.readAsDataURL(file);
-        
-      } catch (err) {
-        console.error("Error loading image:", err);
-        displayError("Failed to load image. Please try again.");
-        hideLoading();
-      }
+        console.log("Cleanup complete.");
     });
-
-    // Drag and drop functionality
-    const uploadArea = document.querySelector(".upload-area");
-    
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
-      uploadArea?.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e: Event) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    ["dragenter", "dragover"].forEach(eventName => {
-      uploadArea?.addEventListener(eventName, () => {
-        uploadArea?.classList.add("border-blue-400", "bg-blue-50");
-      });
-    });
-
-    ["dragleave", "drop"].forEach(eventName => {
-      uploadArea?.addEventListener(eventName, () => {
-        uploadArea?.classList.remove("border-blue-400", "bg-blue-50");
-      });
-    });
-
-    uploadArea?.addEventListener("drop", (e: DragEvent) => {
-      const files = e.dataTransfer?.files;
-      if (files && files[0]) {
-        imageInput!.files = files;
-        imageInput!.dispatchEvent(new Event("change"));
-      }
-    });
-
-    // Button event listeners
-    processBtn.addEventListener("click", processImage);
-    clearBtn.addEventListener("click", clearImage);
-
-    console.log("Image upload detector initialized successfully.");
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    await initializeApp();
-  });
-
-  // Cleanup on page unload
-  window.addEventListener("beforeunload", () => {
-    console.log("Page unloading. Cleaning up resources...");
-    
-    if (detector) {
-      detector.dispose();
-      detector = null;
-    }
-    
-    console.log("Cleanup complete.");
-  });
+    // });
 </script>
 
 <script define:vars={{ cascadePath, maxImageSize }}>
-  // Pass props to the main script via data attributes
-  if (document.currentScript) {
-    document.currentScript.setAttribute("data-cascade-path", cascadePath);
-    document.currentScript.setAttribute("data-max-image-size", maxImageSize.toString());
-  }
+    // Pass props to the main script via data attributes
+    if (document.currentScript) {
+        document.currentScript.setAttribute("data-cascade-path", cascadePath);
+        document.currentScript.setAttribute("data-max-image-size", maxImageSize.toString());
+    }
 </script>

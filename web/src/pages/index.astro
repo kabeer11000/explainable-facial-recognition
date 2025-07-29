@@ -13,7 +13,7 @@ import Menu from "@/components/Menu";
 <script>
 	// Import your Nanostore atoms
 	import { $ConnectionStatus } from "@/stores/connection";
-	import { $PersonInFrame, $ImageData, $PersonResponse } from "@/stores/detector";
+	import { $PersonInFrame, $ImageData, $PersonResponse, $Model } from "@/stores/detector";
 	import { imageDataToBase64 } from "@/lib/image"; // Assuming this utility is available
 
 	// Initialize status messages for better clarity
@@ -42,6 +42,7 @@ import Menu from "@/components/Menu";
 							event: "image_push",
 							id: "00", // Consider making this dynamic if multiple clients/users
 							data: imageDataToBase64(imageData),
+							model: $Model.get()
 						}),
 					);
 					console.log("personInFrame: true. Image sent to backend.");

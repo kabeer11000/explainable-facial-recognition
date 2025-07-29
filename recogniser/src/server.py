@@ -105,6 +105,7 @@ async def websocket_handler(websocket):
             response = {
                 "event": "server_response",
                 "status": "recognized",
+                "model": model,
                 "label": str(final_label), # Ensure it's a string
                 "original_label": str(LABEL_ENCODER.inverse_transform([predicted_label_encoded_np])[0]),
                 "untransformed_label": int(predicted_label_encoded_np), # Convert np.int64 to int
